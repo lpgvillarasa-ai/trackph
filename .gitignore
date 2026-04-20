@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.db
+*.db-journal
+*.sqlite
+.env
+*.vbs
+run-hidden.vbs
+run-silent.vbs

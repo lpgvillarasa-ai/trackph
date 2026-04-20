@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrackPH — Team Time Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary:#2563eb; --primary-dark:#1d4ed8; --primary-light:#eff6ff;
+    --green:#10b981;   --green-dark:#059669;   --green-light:#ecfdf5;
+    --red:#ef4444;     --red-dark:#dc2626;
+    --orange:#f59e0b;  --orange-light:#fffbeb;
+    --purple:#7c3aed;
+    --gray-50:#f8fafc; --gray-100:#f1f5f9; --gray-200:#e2e8f0;
+    --gray-300:#cbd5e1; --gray-400:#94a3b8; --gray-500:#64748b;
+    --gray-600:#475569; --gray-700:#334155; --gray-800:#1e293b; --gray-900:#0f172a;
+    --white:#ffffff;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+    --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.05);
+    --shadow-lg:0 10px 25px rgba(0,0,0,.1),0 4px 10px rgba(0,0,0,.05);
+    --shadow-xl:0 20px 40px rgba(0,0,0,.12),0 8px 16px rgba(0,0,0,.06);
+    --r:12px; --rs:8px; --r-lg:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--gray-50);color:var(--gray-800);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;}
+  .page{display:none;min-height:100vh;}
+  .page.active{display:flex;flex-direction:column;}
+
+  /* ── Topbar ── */
+  .topbar{background:var(--white);border-bottom:1px solid var(--gray-200);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);}
+  .topbar-logo{font-weight:800;font-size:17px;color:var(--gray-900);letter-spacing:-.4px;display:flex;align-items:center;gap:8px;}
+  .topbar-logo-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);display:inline-block;}
+  .topbar-badge{background:var(--primary-light);color:var(--primary);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;}
+
+  /* ── Layout ── */
+  .content{flex:1;padding:28px;max-width:980px;margin:0 auto;width:100%;}
+  .content-wide{flex:1;padding:24px 28px;width:100%;}
+
+  /* ── Cards ── */
+  .card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);margin-bottom:16px;}
+  .card:last-child{margin-bottom:0;}
+  .card-title{font-weight:700;font-size:15px;margin-bottom:16px;color:var(--gray-900);}
+
+  /* ── Buttons ── */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 18px;border-radius:var(--rs);font-size:13.5px;font-weight:600;cursor:pointer;border:none;transition:background .15s,box-shadow .15s,transform .12s,border-color .15s,opacity .15s;white-space:nowrap;letter-spacing:-.1px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn:active:not(:disabled){transform:scale(.97);}
+  .btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
+  .btn-primary{background:var(--primary);color:var(--white);box-shadow:0 1px 2px rgba(37,99,235,.3);}
+  .btn-primary:hover:not(:disabled){background:var(--primary-dark);box-shadow:0 2px 8px rgba(37,99,235,.4);}
+  .btn-green{background:var(--green);color:var(--white);font-size:16px;padding:14px 40px;border-radius:10px;box-shadow:0 2px 8px rgba(16,185,129,.3);}
+  .btn-green:hover:not(:disabled){background:var(--green-dark);box-shadow:0 4px 12px rgba(16,185,129,.4);}
+  .btn-red{background:var(--red);color:var(--white);font-size:16px;padding:14px 40px;border-radius:10px;}
+  .btn-red:hover:not(:disabled){background:var(--red-dark);}
+  .btn-ghost{background:transparent;color:var(--gray-600);border:1.5px solid var(--gray-200);}
+  .btn-ghost:hover:not(:disabled){background:var(--gray-50);border-color:var(--gray-300);color:var(--gray-700);}
+  .btn-danger{background:transparent;color:var(--red);border:1.5px solid #fecaca;}
+  .btn-danger:hover:not(:disabled){background:#fff5f5;border-color:var(--red);}
+  .btn-sm{padding:5px 11px;font-size:12px;}
+  .btn-full{width:100%;}
+
+  /* ── Forms ── */
+  label{display:block;font-weight:600;color:var(--gray-700);margin-bottom:5px;font-size:12.5px;letter-spacing:.1px;}
+  input,select{width:100%;padding:9px 13px;border:1.5px solid var(--gray-200);border-radius:var(--rs);font-size:14px;color:var(--gray-800);outline:none;background:var(--white);transition:border-color .15s,box-shadow .15s;font-family:inherit;touch-action:manipulation;}
+  input:focus-visible,select:focus-visible,input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1);outline:none;}
+  input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.1);}
+  .form-group{margin-bottom:14px;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .ferr{color:var(--red);font-size:12px;margin-top:4px;display:none;}
+  .ferr.show{display:block;}
+
+  /* ── Tables ── */
+  .table-wrap{overflow-x:auto;border-radius:var(--rs);overflow:hidden;}
+  table{width:100%;border-collapse:collapse;}
+  th{text-align:left;padding:10px 16px;font-size:11.5px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.6px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);}
+  td{padding:12px 16px;border-bottom:1px solid var(--gray-100);color:var(--gray-700);font-size:13px;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#f8fafc;}
+
+  /* ── Badges ── */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;}
+  .badge-green{background:var(--green-light);color:#065f46;}
+  .badge-gray{background:var(--gray-100);color:var(--gray-600);}
+  .badge-blue{background:var(--primary-light);color:var(--primary-dark);}
+
+  /* ── Stat cards ── */
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:20px;}
+  .stat-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--primary);border-radius:3px 3px 0 0;}
+  .stat-card.green::before{background:var(--green);}
+  .stat-card.orange::before{background:var(--orange);}
+  .stat-card.gray::before{background:var(--gray-300);}
+  .stat-card.purple::before{background:var(--purple);}
+  .stat-label{font-size:11.5px;color:var(--gray-500);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
+  .stat-value{font-size:22px;font-weight:800;color:var(--gray-900);letter-spacing:-.5px;}
+  .stat-sub{font-size:11.5px;color:var(--gray-400);margin-top:3px;}
+
+  /* ── Tabs ── */
+  .tabs{display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:24px;}
+  .tab-btn{padding:10px 20px;font-size:13.5px;font-weight:600;color:var(--gray-400);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;letter-spacing:-.1px;}
+  .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);background:var(--primary-light);border-radius:8px 8px 0 0;}
+  .tab-btn:hover:not(.active){color:var(--gray-700);background:var(--gray-50);border-radius:8px 8px 0 0;}
+  .tab-pane{display:none;}
+  .tab-pane.active{display:block;}
+
+  /* ── Modals ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:999;padding:16px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--white);border-radius:var(--r-lg);padding:28px;width:100%;max-width:440px;box-shadow:var(--shadow-xl);animation:slideUp .2s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes slideUp{from{transform:translateY(24px) scale(.97);opacity:0;}}
+  .modal-title{font-size:18px;font-weight:800;margin-bottom:18px;color:var(--gray-900);letter-spacing:-.3px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;}
+
+  /* ── Home ── */
+  #page-home{background:linear-gradient(160deg,#0f172a 0%,#1e3a8a 50%,#2563eb 100%);align-items:center;justify-content:center;position:relative;overflow:hidden;}
+  #page-home::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(96,165,250,.15) 0%,transparent 70%);pointer-events:none;}
+  #page-home::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;}
+  .home-inner{text-align:center;padding:40px 24px;position:relative;z-index:1;}
+  .home-logo-ring{width:72px;height:72px;border-radius:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px;backdrop-filter:blur(10px);}
+  .home-title{font-size:40px;font-weight:800;color:var(--white);margin-bottom:6px;letter-spacing:-1.5px;}
+  .home-tagline{font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(147,197,253,.8);margin-bottom:10px;}
+  .home-sub{color:rgba(191,219,254,.8);font-size:16px;margin-bottom:52px;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.6;}
+  .home-cards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+  .home-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:30px 40px;cursor:pointer;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s;text-align:center;color:var(--white);min-width:190px;backdrop-filter:blur(12px);font-family:inherit;}
+  .home-card:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.3);}
+  .home-card:active{transform:translateY(-1px);}
+  .home-card-icon{font-size:38px;margin-bottom:12px;display:block;}
+  .home-card-label{font-size:17px;font-weight:700;letter-spacing:-.3px;}
+  .home-card-desc{font-size:12.5px;color:rgba(191,219,254,.7);margin-top:5px;}
+  .home-features{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:40px;}
+  .home-feature{color:rgba(191,219,254,.65);font-size:12px;display:flex;align-items:center;gap:6px;}
+  .home-feature::before{content:'✓';color:rgba(52,211,153,.8);font-weight:700;}
+
+  /* ── Login ── */
+  .login-box{width:100%;max-width:390px;margin:0 auto;}
+  .login-icon{font-size:44px;text-align:center;margin-bottom:10px;}
+  .login-title{font-size:24px;font-weight:800;text-align:center;margin-bottom:4px;color:var(--gray-900);letter-spacing:-.5px;}
+  .login-sub{font-size:13px;color:var(--gray-500);text-align:center;margin-bottom:24px;}
+
+  /* ── Employee dashboard ── */
+  .emp-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;}
+  .emp-header-av{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--white);flex-shrink:0;}
+
+  .timer-card{text-align:center;padding:36px 20px;}
+  .timer-display{font-size:60px;font-weight:800;color:var(--gray-800);letter-spacing:-3px;font-variant-numeric:tabular-nums;margin-bottom:8px;}
+  .timer-display.running{color:var(--green);}
+  .timer-display.on-break{color:var(--orange);}
+  .timer-label{font-size:13px;color:var(--gray-400);margin-bottom:28px;font-weight:500;}
+  .timer-since{font-size:12px;color:var(--gray-400);margin-top:14px;}
+  .btn-break{background:var(--orange);color:var(--white);border:none;box-shadow:0 2px 8px rgba(245,158,11,.3);}
+  .btn-break:hover{background:#d97706;}
+  .btn-break-active{background:var(--gray-100);color:var(--gray-700);border:1.5px solid var(--gray-200);}
+  .btn-break-active:hover{background:var(--gray-200);}
+
+  .week-bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--gray-500);margin-bottom:7px;font-weight:600;}
+  .week-bar-track{height:8px;background:var(--gray-100);border-radius:4px;overflow:hidden;}
+  .week-bar-fill{height:100%;border-radius:4px;background:var(--primary);transition:width .5s cubic-bezier(.34,1.1,.64,1);}
+  .week-bar-fill.ot{background:var(--orange);}
+
+  .day-entry{border:1.5px solid var(--gray-200);border-radius:var(--rs);margin-bottom:8px;overflow:hidden;}
+  .day-entry:last-child{margin-bottom:0;}
+  .day-entry.today{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+  .day-entry-header{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--gray-50);cursor:pointer;user-select:none;}
+  .day-entry.today .day-entry-header{background:var(--primary-light);}
+  .day-entry-header:hover{background:var(--gray-100);}
+  .day-entry.today .day-entry-header:hover{background:#dbeafe;}
+  .day-label{font-size:13px;font-weight:700;color:var(--gray-700);}
+  .day-entry.today .day-label{color:var(--primary);}
+  .day-total{font-size:13px;font-weight:700;color:var(--gray-700);}
+  .day-total.zero{color:var(--gray-300);font-weight:400;}
+  .day-body{padding:10px 14px;border-top:1px solid var(--gray-100);display:none;}
+  .day-body.open{display:block;}
+  .entry-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--gray-100);font-size:12px;}
+  .entry-row:last-child{border-bottom:none;padding-bottom:0;}
+  .entry-times{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap;}
+  .entry-dur{margin-left:auto;font-weight:700;color:var(--gray-700);font-size:12px;}
+  .break-list{width:100%;margin-top:6px;padding-left:12px;border-left:2px solid var(--orange);display:flex;flex-direction:column;gap:4px;}
+  .break-item{font-size:11px;color:var(--gray-500);display:flex;justify-content:space-between;}
+  .day-rest{font-size:12px;color:var(--gray-300);font-style:italic;padding:6px 0;}
+
+  /* ── Admin ── */
+  .week-nav{display:flex;align-items:center;gap:8px;margin-bottom:22px;flex-wrap:nowrap;}
+  .week-nav-label{font-weight:700;font-size:15px;color:var(--gray-800);white-space:nowrap;margin:0 8px;letter-spacing:-.2px;}
+  .payroll-row-ot td{background:var(--orange-light);}
+
+  /* ── PIN ── */
+  .pin-display{display:flex;gap:12px;justify-content:center;margin:28px 0 18px;}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--gray-300);transition:all .15s;}
+  .pin-dot.filled{background:var(--primary);border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.2);}
+  .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto;}
+  .pin-key{padding:14px;border-radius:10px;border:1.5px solid var(--gray-200);background:var(--white);font-size:18px;font-weight:700;cursor:pointer;text-align:center;transition:all .12s;user-select:none;color:var(--gray-800);}
+  .pin-key:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary);}
+  .pin-key:active{transform:scale(.92);background:var(--primary);color:var(--white);}
+
+  .empty{text-align:center;padding:48px 20px;color:var(--gray-400);}
+  .empty-icon{font-size:40px;margin-bottom:10px;opacity:.6;}
+
+  #toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--gray-900);color:var(--white);padding:11px 22px;border-radius:10px;font-size:13.5px;font-weight:500;box-shadow:var(--shadow-lg);z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;letter-spacing:-.1px;}
+  #toast.show{opacity:1;}
+
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ── Modal scroll containment ── */
+  .modal-overlay{overscroll-behavior:contain;}
+
+  /* ── PIN keys touch ── */
+  .pin-key{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+  .home-card{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+
+  /* ── Headings balance ── */
+  .home-title,.modal-title,.login-title,.card-title{text-wrap:balance;}
+
+  /* ── Reduced motion ── */
+  @media(prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+    .modal{animation:none;}
+    .week-bar-fill{transition:none;}
+  }
+
+  .flex{display:flex;} .items-center{align-items:center;} .gap-2{gap:8px;} .justify-between{justify-content:space-between;} .ml-auto{margin-left:auto;}
+
+  @media(max-width:600px){
+    .content{padding:16px;}
+    .timer-display{font-size:44px;}
+    .form-row{grid-template-columns:1fr;}
+    .home-title{font-size:32px;}
+    .home-sub{font-size:14px;}
+    th,td{padding:9px 10px;}
+    .tab-btn{padding:8px 12px;font-size:12.5px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <div class="home-inner">
+    <div class="home-logo-ring">⏱</div>
+    <div class="home-tagline">Team Time Tracker</div>
+    <div class="home-title">TrackPH</div>
+    <div class="home-sub">Payroll-ready time tracking for local teams — runs on your own network, no subscription needed.</div>
+    <div class="home-cards">
+      <button class="home-card" onclick="showPage('page-emp-login')" aria-label="Subcontractor login — clock in and out">
+        <span class="home-card-icon" aria-hidden="true">👤</span>
+        <div class="home-card-label">Subcontractor</div>
+        <div class="home-card-desc">Clock in / out &amp; view your hours</div>
+      </button>
+      <button class="home-card" onclick="goAdminLogin()" aria-label="Admin login — payroll and team management">
+        <span class="home-card-icon" aria-hidden="true">🔐</span>
+        <div class="home-card-label">Admin</div>
+        <div class="home-card-desc">Payroll, payments &amp; team</div>
+      </button>
+    </div>
+    <div class="home-features">
+      <span class="home-feature">Automatic OT calculation</span>
+      <span class="home-feature">Philippine Peso &amp; Time</span>
+      <span class="home-feature">Weekly payroll reports</span>
+      <span class="home-feature">Works offline on LAN</span>
+    </div>
+  </div>
+</div>
+
+<!-- EMPLOYEE LOGIN -->
+<div id="page-emp-login" class="page" style="align-items:center;justify-content:center;padding:24px;background:var(--gray-50);">
+  <div class="login-box">
+    <div class="login-icon">👤</div>
+    <div class="login-title">Welcome back</div>
+    <div class="login-sub">Select your name and enter your password to continue</div>
+    <div class="card">
+      <div class="form-group">
+        <label for="login-emp-select">Your Name</label>
+        <select id="login-emp-select" name="username" autocomplete="username">
+          <option value="">— Select your name —</option>
+        </select>
+        <div id="login-emp-err" class="ferr" role="alert">Please select your name.</div>
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" name="password" autocomplete="current-password"
+               placeholder="Enter your password…"
+               onkeydown="if(event.key==='Enter')doEmpLogin()" />
+        <div id="login-pw-err" class="ferr"></div>
+      </div>
+      <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px;">
+        Default password is <strong>1234</strong> — ask admin if you don't know yours.
+      </div>
+      <button id="login-btn" class="btn btn-primary btn-full" onclick="doEmpLogin()">Log In</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px;" onclick="showPage('page-home')">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMPLOYEE DASHBOARD -->
+<div id="page-employee" class="page">
+  <div class="topbar">
+    <div class="topbar-logo"><span class="topbar-logo-dot"></span>TrackPH</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span id="topbar-emp-name" style="font-size:13px;color:var(--gray-500);font-weight:500;"></span>
+      <button class="btn btn-ghost btn-sm" onclick="openChangePasswordModal()">🔑 Password</button>
+      <button class="btn btn-ghost btn-sm" onclick="doEmpLogout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="emp-header">
+      <div id="emp-avatar" class="emp-header-av"></div>
+      <div>
+        <div id="emp-name" style="font-size:20px;font-weight:700;"></div>
+        <div id="emp-status-sub" style="font-size:13px;color:var(--gray-500);"></div>
+      </div>
+    </div>
+
+    <div class="card timer-card">
+      <div id="timer-display" class="timer-display">00:00:00</div>
+      <div id="timer-label" class="timer-label">Not clocked in</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button id="clock-btn" class="btn btn-green" onclick="handleClockBtn()">Clock In</button>
+        <button id="break-btn" class="btn" style="display:none;" onclick="handleBreakBtn()">☕ Break</button>
+      </div>
+      <div id="timer-since" class="timer-since"></div>
+      <div id="break-log-wrap" style="margin-top:16px;display:none;">
+        <div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:6px;">TODAY'S BREAKS</div>
+        <div id="break-log" style="font-size:12px;color:var(--gray-600);"></div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Today</div><div id="stat-today" class="stat-value">—</div><div class="stat-sub">Hours worked</div></div>
+      <div class="stat-card green"><div class="stat-label">This Week</div><div id="stat-week" class="stat-value">—</div><div class="stat-sub">Total hours</div></div>
+      <div class="stat-card orange"><div class="stat-label">OT Hours</div><div id="stat-ot" class="stat-value" style="color:var(--orange)">—</div><div id="stat-ot-sub" class="stat-sub">Above regular</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Week Progress</div>
+      <div class="week-bar-label"><span id="bar-left">—</span><span id="bar-right">—</span></div>
+      <div class="week-bar-track"><div id="bar-fill" class="week-bar-fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:0;">Daily Log</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-ghost btn-sm" onclick="changeEmpWeek(-1)">← Prev</button>
+          <span id="emp-week-label" style="font-size:12px;font-weight:600;color:var(--gray-500);white-space:nowrap;"></span>
+          <button class="btn btn-ghost btn-sm" onclick="changeEmpWeek(1)">Next →</button>
+        </div>
+      </div>
+      <div id="day-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PIN -->
+<div id="page-admin-login" class="page" style="align-items:center;justify-content:center;background:var(--gray-50);">
+  <div class="card" style="width:100%;max-width:340px;text-align:center;padding:36px 28px;margin-bottom:0;box-shadow:var(--shadow-lg);">
+    <div style="width:56px;height:56px;border-radius:16px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;">🔐</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--gray-900);letter-spacing:-.4px;">Admin Access</div>
+    <div style="color:var(--gray-500);font-size:13px;">Enter your 4-digit PIN to continue</div>
+    <div id="pin-error" style="color:var(--red);font-size:12px;min-height:18px;margin-top:6px;"></div>
+    <div class="pin-display">
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-pad">
+      <div class="pin-key" onclick="pinKey('1')">1</div><div class="pin-key" onclick="pinKey('2')">2</div><div class="pin-key" onclick="pinKey('3')">3</div>
+      <div class="pin-key" onclick="pinKey('4')">4</div><div class="pin-key" onclick="pinKey('5')">5</div><div class="pin-key" onclick="pinKey('6')">6</div>
+      <div class="pin-key" onclick="pinKey('7')">7</div><div class="pin-key" onclick="pinKey('8')">8</div><div class="pin-key" onclick="pinKey('9')">9</div>
+      <div class="pin-key" onclick="pinClear()" style="font-size:12px;color:var(--gray-400);">CLR</div>
+      <div class="pin-key" onclick="pinKey('0')">0</div>
+      <div class="pin-key" onclick="pinBack()">⌫</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="showPage('page-home')">← Back</button>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="page-admin" class="page">
+  <div class="topbar">
+    <div class="topbar-logo"><span class="topbar-logo-dot"></span>TrackPH <span class="topbar-badge">Admin</span></div>
+    <button class="btn btn-ghost btn-sm" onclick="doAdminLogout()">Sign Out</button>
+  </div>
+  <div class="content-wide">
+    <div style="max-width:1000px;margin:0 auto;">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('payroll')">💰 Payroll</button>
+        <button class="tab-btn" onclick="switchTab('timelog')">🕐 Time Log</button>
+        <button class="tab-btn" onclick="switchTab('team')">👥 Team</button>
+        <button class="tab-btn" onclick="switchTab('payments')">💳 Payments</button>
+        <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
+      </div>
+
+      <!-- PAYROLL -->
+      <div id="tab-payroll" class="tab-pane active">
+        <div class="week-nav">
+          <button class="btn btn-ghost btn-sm" onclick="changeWeek(-1)">← Prev</button>
+          <div id="week-label" class="week-nav-label">—</div>
+          <button class="btn btn-ghost btn-sm" onclick="changeWeek(1)">Next →</button>
+          <button class="btn btn-ghost btn-sm" onclick="jumpToToday()" style="color:var(--primary);font-weight:600;">Today</button>
+          <input type="date" id="payroll-date-pick" onchange="jumpToDate(this.value)" style="border:1px solid var(--gray-200);border-radius:var(--rs);padding:4px 8px;font-size:13px;cursor:pointer;width:150px;flex-shrink:0;" title="Jump to any week" />
+          <div style="margin-left:auto;display:flex;gap:6px;flex-shrink:0;">
+            <button class="btn btn-ghost btn-sm" onclick="downloadPayrollTxt()" title="Download as text file">⬇ Text</button>
+            <button class="btn btn-ghost btn-sm" onclick="printPayroll()" title="Print or save as PDF">🖨 PDF</button>
+          </div>
+        </div>
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <label style="font-size:13px;font-weight:600;color:var(--gray-600);">Filter Subcontractor:</label>
+          <select id="payroll-filter-emp" onchange="renderPayroll()" style="width:auto;min-width:180px;">
+            <option value="">All Subcontractors</option>
+          </select>
+        </div>
+        <div id="payroll-stats" class="stats-row"></div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title">Subcontractor Payroll</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Subcontractor</th><th>Status</th><th>Regular Hrs</th><th>OT Hrs</th><th>Regular Pay</th><th>OT Pay</th><th>Allowance</th><th>Bonus</th><th>Total Pay</th></tr></thead>
+              <tbody id="payroll-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIME LOG -->
+      <div id="tab-timelog" class="tab-pane">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <select id="log-filter-emp" onchange="renderTimelog()" style="width:auto;min-width:160px;"><option value="">All Subcontractors</option></select>
+          <input type="date" id="log-filter-start" onchange="renderTimelog()" style="width:auto;" title="From date" />
+          <span style="color:var(--gray-400);font-size:13px;">to</span>
+          <input type="date" id="log-filter-end" onchange="renderTimelog()" style="width:auto;" title="To date" />
+          <button class="btn btn-ghost btn-sm" onclick="setTimelogWeek(0)" style="color:var(--primary);">This Week</button>
+          <button class="btn btn-ghost btn-sm" onclick="setTimelogWeek(-1)">Last Week</button>
+          <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" onclick="downloadTimelogTxt()">⬇ Text</button>
+            <button class="btn btn-ghost btn-sm" onclick="printTimelog()">🖨 PDF</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddEntryModal()">+ Add Entry</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Subcontractor</th><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Duration</th><th>OT Hrs</th><th>Actions</th></tr></thead>
+              <tbody id="timelog-tbody"></tbody>
+            </table>
+          </div>
+          <div id="timelog-empty" class="empty" style="display:none;"><div class="empty-icon">🕐</div><div>No entries found</div></div>
+        </div>
+      </div>
+
+      <!-- TEAM -->
+      <div id="tab-team" class="tab-pane">
+        <!-- Active Now Panel -->
+        <div id="active-now-panel" style="display:none;background:var(--orange-light);border:1.5px solid #f59e0b33;border-radius:var(--r-lg);padding:14px 18px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span style="width:10px;height:10px;border-radius:50%;background:var(--orange);display:inline-block;animation:pulse 1.4s infinite;"></span>
+            <span style="font-weight:700;color:#92400e;font-size:14px;">Currently Clocked In</span>
+            <span id="active-now-count" style="background:#f59e0b22;color:#92400e;font-size:12px;font-weight:700;padding:1px 8px;border-radius:20px;"></span>
+          </div>
+          <div id="active-now-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+        <div class="flex items-center justify-between" style="margin-bottom:16px;">
+          <h3 style="font-size:16px;font-weight:700;">Team Members</h3>
+          <button class="btn btn-primary" onclick="openAddEmpModal()">+ Add Subcontractor</button>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Daily Rate</th><th>OT Rate</th><th>Regular Hrs/day</th><th>Allowance</th><th>Password</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="team-tbody"></tbody>
+            </table>
+          </div>
+          <div id="team-empty" class="empty" style="display:none;"><div class="empty-icon">👥</div><div>No subcontractors yet. Click "+ Add Subcontractor".</div></div>
+        </div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div id="tab-payments" class="tab-pane">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <select id="pay-filter-emp" onchange="renderPayments()" style="width:auto;min-width:160px;"><option value="">All Subcontractors</option></select>
+          <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" id="gen-payables-btn" onclick="generateWeekPayables()" style="color:var(--primary);font-weight:600;">⚡ Generate This Week's Payables</button>
+            <button class="btn btn-primary btn-sm" onclick="openPaymentModal(null)">+ Record Payment</button>
+          </div>
+        </div>
+        <div id="payments-stats" class="stats-row" style="margin-bottom:16px;"></div>
+
+        <!-- Pending -->
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-title" style="margin-bottom:12px;">⏳ Pending Payments</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Subcontractor</th><th>Week</th><th>Date Range</th><th>Amount</th><th>Notes</th><th>Actions</th></tr></thead>
+              <tbody id="payments-pending-tbody"></tbody>
+            </table>
+          </div>
+          <div id="payments-pending-empty" class="empty" style="display:none;padding:24px 20px;"><div class="empty-icon">✅</div><div>All caught up — no pending payments.</div></div>
+        </div>
+
+        <!-- History -->
+        <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-weight:700;font-size:14px;color:var(--gray-700);">Payment History</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin:0;">Month:</label>
+            <input type="month" id="pay-filter-month" onchange="renderPayments()" style="width:auto;" />
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Subcontractor</th><th>Week</th><th>Date Range</th><th>Amount</th><th>Paid Date</th><th>Notes</th><th>Actions</th></tr></thead>
+              <tbody id="payments-history-tbody"></tbody>
+            </table>
+          </div>
+          <div id="payments-history-empty" class="empty" style="display:none;padding:24px 20px;"><div class="empty-icon">🕐</div><div>No payment history for this month.</div></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="tab-settings" class="tab-pane">
+        <div style="max-width:440px;">
+          <div class="card">
+            <div class="card-title">Admin PIN</div>
+            <div class="form-group"><label for="s-cur-pin">Current PIN</label><input type="password" id="s-cur-pin" name="current-pin" autocomplete="off" inputmode="numeric" maxlength="4" placeholder="••••" /></div>
+            <div class="form-group"><label for="s-new-pin">New PIN (4 digits)</label><input type="password" id="s-new-pin" name="new-pin" autocomplete="off" inputmode="numeric" maxlength="4" placeholder="••••" /></div>
+            <div class="form-group"><label for="s-cfm-pin">Confirm New PIN</label><input type="password" id="s-cfm-pin" name="confirm-pin" autocomplete="off" inputmode="numeric" maxlength="4" placeholder="••••" /></div>
+            <div id="pin-chg-err" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none;"></div>
+            <button class="btn btn-primary" onclick="changeAdminPin()">Update PIN</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Overtime Multiplier</div>
+            <div class="form-group"><label>Multiplier (e.g. 1.5 = time and a half)</label><input type="number" id="s-ot-mult" step="0.1" min="1" max="3" /></div>
+            <button class="btn btn-primary" onclick="saveOtMult()">Save</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add/Edit Subcontractor -->
+<div id="modal-emp" class="modal-overlay">
+  <div class="modal">
+    <div id="modal-emp-title" class="modal-title">Add Subcontractor</div>
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="ef-name" placeholder="e.g. Juan dela Cruz" />
+      <div id="ef-name-err" class="ferr">Please enter a name.</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Daily Base Pay (PHP/day)</label><input type="number" id="ef-daily-rate" placeholder="0.00" step="0.01" min="0" /></div>
+      <div class="form-group"><label>OT Rate (PHP/hr) <small style="color:var(--gray-400);font-weight:400;">overtime only</small></label><input type="number" id="ef-rate" placeholder="0.00" step="0.01" min="0" /></div>
+    </div>
+    <div class="form-group"><label>Daily Regular Hours <small style="color:var(--gray-400);font-weight:400;">(OT threshold — hours before OT kicks in)</small></label><input type="number" id="ef-daily-hours" placeholder="8" step="0.5" min="0.5" max="24" /></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Allowance (PHP)</label>
+        <input type="number" id="ef-allowance" placeholder="0.00" step="0.01" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Allowance Type</label>
+        <select id="ef-allowance-type">
+          <option value="weekly">Per Week (fixed every week)</option>
+          <option value="daily">Per Day (×days worked)</option>
+        </select>
+      </div>
+    </div>
+    <div id="ef-pw-wrap" class="form-group">
+      <label>Initial Password</label>
+      <input type="text" id="ef-pw" placeholder="Default: 1234" />
+      <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">Subcontractor will use this password to log in. They can change it later.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-emp')">Cancel</button>
+      <button id="emp-save-btn" class="btn btn-primary" onclick="saveEmployee()">Save Subcontractor</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Weekly Bonus / Notes -->
+<div id="modal-bonus" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">Weekly Bonus &amp; Notes</div>
+    <div id="bonus-emp-label" style="color:var(--gray-500);font-size:13px;margin-bottom:16px;"></div>
+    <div class="form-group">
+      <label>Bonus Amount (PHP)</label>
+      <input type="number" id="bonus-amount" placeholder="0.00" step="0.01" min="0" />
+      <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">Added on top of regular + OT pay for this week.</div>
+    </div>
+    <div class="form-group">
+      <label>Notes / Remarks</label>
+      <textarea id="bonus-notes" rows="3" placeholder="e.g. Performance bonus, attendance bonus..." style="width:100%;padding:8px 12px;border:1px solid var(--gray-300);border-radius:var(--rs);font-size:14px;font-family:inherit;resize:vertical;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-bonus')">Cancel</button>
+      <button id="bonus-save-btn" class="btn btn-primary" onclick="saveBonusAdjustment()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Reset Password (Admin) -->
+<div id="modal-reset-pw" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">Reset Password</div>
+    <div style="color:var(--gray-600);font-size:14px;margin-bottom:16px;" id="reset-pw-for"></div>
+    <div class="form-group">
+      <label for="reset-pw-val">New Password</label>
+      <input type="text" id="reset-pw-val" name="new-password" autocomplete="new-password" placeholder="Enter new password…" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-reset-pw')">Cancel</button>
+      <button id="reset-pw-btn" class="btn btn-primary" onclick="doResetPassword()">Set Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Change Own Password (Employee) -->
+<div id="modal-change-pw" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">🔑 Change Password</div>
+    <div class="form-group">
+      <label for="cpw-cur">Current Password</label>
+      <input type="password" id="cpw-cur" name="current-password" autocomplete="current-password" placeholder="Current password…" />
+    </div>
+    <div class="form-group">
+      <label for="cpw-new">New Password</label>
+      <input type="password" id="cpw-new" name="new-password" autocomplete="new-password" placeholder="New password…" />
+    </div>
+    <div class="form-group">
+      <label for="cpw-cfm">Confirm New Password</label>
+      <input type="password" id="cpw-cfm" name="confirm-password" autocomplete="new-password" placeholder="Confirm new password…" />
+    </div>
+    <div id="cpw-err" class="ferr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-change-pw')">Cancel</button>
+      <button id="cpw-btn" class="btn btn-primary" onclick="doChangePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add/Edit Time Entry -->
+<div id="modal-entry" class="modal-overlay">
+  <div class="modal">
+    <div id="modal-entry-title" class="modal-title">Add Time Entry</div>
+    <div class="form-group"><label>Subcontractor *</label><select id="entry-emp"></select></div>
+    <div class="form-row">
+      <div class="form-group"><label>Clock In Date *</label><input type="date" id="entry-in-date" /></div>
+      <div class="form-group"><label>Clock In Time *</label><input type="time" id="entry-in" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Clock Out Date</label><input type="date" id="entry-out-date" /></div>
+      <div class="form-group"><label>Clock Out Time</label><input type="time" id="entry-out" /></div>
+    </div>
+    <div id="entry-err" class="ferr">Please fill in subcontractor, date, and clock-in time.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-entry')">Cancel</button>
+      <button id="entry-save-btn" class="btn btn-primary" onclick="saveEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Payment -->
+<div id="modal-payment" class="modal-overlay">
+  <div class="modal" style="max-width:500px;">
+    <div id="modal-payment-title" class="modal-title">Record Payment</div>
+    <div class="form-group"><label>Subcontractor *</label><select id="pf-emp"></select></div>
+    <div class="form-row">
+      <div class="form-group"><label>Week Label (e.g. Week 15)</label><input type="text" id="pf-week-label" placeholder="Week 15" /></div>
+      <div class="form-group"><label>Amount (PHP) *</label><input type="number" id="pf-amount" min="0" step="0.01" placeholder="0.00" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Week Start *</label><input type="date" id="pf-week-start" /></div>
+      <div class="form-group"><label>Week End *</label><input type="date" id="pf-week-end" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Status</label>
+        <select id="pf-status">
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Paid Date</label><input type="date" id="pf-paid-date" /></div>
+    </div>
+    <div class="form-group"><label>Notes</label><input type="text" id="pf-notes" placeholder="Optional notes" /></div>
+    <div id="pf-err" class="ferr">Please fill in all required fields.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-payment')">Cancel</button>
+      <button id="pf-save-btn" class="btn btn-primary" onclick="savePayment()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Confirm -->
+<div id="modal-confirm" class="modal-overlay">
+  <div class="modal">
+    <div id="confirm-title" class="modal-title">Confirm</div>
+    <div id="confirm-msg" style="color:var(--gray-600);font-size:14px;line-height:1.6;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Cancel</button>
+      <button id="confirm-ok" class="btn btn-danger">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Clock Out -->
+<div id="modal-clockout" class="modal-overlay">
+  <div class="modal" style="text-align:center;">
+    <div style="font-size:32px;margin-bottom:8px;">👋</div>
+    <div class="modal-title">Clock Out?</div>
+    <div id="clockout-dur" style="font-size:28px;font-weight:800;color:var(--gray-700);margin:12px 0;"></div>
+    <div style="color:var(--gray-500);font-size:13px;margin-bottom:4px;">Session duration</div>
+    <div class="modal-actions" style="justify-content:center;gap:16px;">
+      <button class="btn btn-ghost" style="min-width:100px;" onclick="closeModal('modal-clockout')">Cancel</button>
+      <button class="btn btn-red" style="min-width:100px;" onclick="confirmClockOut()">Clock Out</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+// ─── API helper ────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = {method, headers:{}, credentials:'same-origin'};
+  if (body) {opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(body);}
+  const res  = await fetch('/api'+path, opts);
+  const data = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error(data.error||'Request failed ('+res.status+')');
+  return data;
+}
+const GET  = p     => api('GET',   p);
+const POST = (p,b) => api('POST',  p, b);
+const PUT  = (p,b) => api('PUT',   p, b);
+const DEL  = p     => api('DELETE',p);
+
+// ─── State ─────────────────────────────────────────────────────────────────
+let currentEmp    = null;
+let timerInterval = null;
+let statsInterval = null;
+let pinBuffer     = '';
+let editingEmpId  = null;
+let editingEntryId = null;
+let weekOffset    = 0;
+let empCache      = [];
+let resetPwForId  = null;
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+function pad(n){return String(n).padStart(2,'0');}
+const PH_TZ='Asia/Manila';
+// Parse a stored PHT ISO string into a Date object — forces +08:00 so arithmetic is correct in any browser
+function phDate(s){return new Date(s.length===19?s+'+08:00':s);}
+function toDateStr(d){return d.toLocaleDateString('en-CA',{timeZone:PH_TZ});} // returns YYYY-MM-DD in PHT
+function sameDay(a,b){return toDateStr(a)===toDateStr(b);}
+function fmtDate(d){return d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric',timeZone:PH_TZ});}
+function fmtTime(d){return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZone:PH_TZ});}
+// Display helpers that work directly on stored PHT strings — no browser timezone conversion at all
+function phtTimeFmt(s){if(!s)return'';const h=+s.slice(11,13),m=s.slice(14,16);return(h%12||12)+':'+m+' '+(h>=12?'PM':'AM');}
+function phtDateFmt(s){if(!s)return'';const[y,mo,d]=s.slice(0,10).split('-').map(Number);return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1]+' '+d+', '+y;}
+function msToHMS(ms){ms=Math.max(0,ms);const s=Math.floor(ms/1000);return pad(Math.floor(s/3600))+':'+pad(Math.floor((s%3600)/60))+':'+pad(s%60);}
+function msToHM(ms){const m=Math.floor(ms/60000);return Math.floor(m/60)+'h '+pad(m%60)+'m';}
+function fmtH(h){const hh=Math.floor(h),mm=Math.round((h-hh)*60);return hh+'h '+pad(mm)+'m';}
+
+function weekRange(offsetDays){
+  const d=new Date(); d.setDate(d.getDate()+offsetDays);
+  const day=d.getDay(), diff=day===0?-6:1-day;
+  const start=new Date(d); start.setDate(d.getDate()+diff); start.setHours(0,0,0,0);
+  const end=new Date(start); end.setDate(start.getDate()+6); end.setHours(23,59,59,999);
+  return {start,end};
+}
+
+function calcMs(entries, empId, start, end){
+  const now=new Date();
+  return entries.filter(e=>e.employee_id===empId).reduce((ms,e)=>{
+    const ci=phDate(e.clock_in);
+    if(ci<start||ci>end) return ms;
+    const co=e.clock_out?phDate(e.clock_out):now;
+    return ms+Math.max(0,co-ci);
+  },0);
+}
+
+const COLORS=['#2563eb','#7c3aed','#db2777','#059669','#d97706','#dc2626','#0891b2','#65a30d'];
+function avatarColor(name){let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))%COLORS.length;return COLORS[Math.abs(h)];}
+function initials(name){return name.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+function avDiv(name,size){
+  return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+avatarColor(name)+
+    ';display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:'+Math.round(size*.35)+
+    'px;font-weight:700;flex-shrink:0;">'+initials(name)+'</div>';
+}
+
+function showToast(msg,dur){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),dur||2500);
+}
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ─── Employee login page ────────────────────────────────────────────────────
+async function loadLoginDropdown(){
+  try {
+    const names = await GET('/employee-names');
+    const sel = document.getElementById('login-emp-select');
+    sel.innerHTML = '<option value="">— Select your name —</option>'+
+      names.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
+  } catch(e){ /* no employees yet */ }
+}
+
+async function doEmpLogin(){
+  const empId = document.getElementById('login-emp-select').value;
+  const pw    = document.getElementById('login-password').value;
+  const empErr = document.getElementById('login-emp-err');
+  const pwErr  = document.getElementById('login-pw-err');
+
+  empErr.classList.remove('show'); pwErr.classList.remove('show');
+  if (!empId) { empErr.classList.add('show'); return; }
+  if (!pw)    { pwErr.textContent='Please enter your password.'; pwErr.classList.add('show'); return; }
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Logging in...';
+
+  try {
+    const emp = await POST('/employee-login', {employee_id:empId, password:pw});
+    currentEmp = emp;
+    document.getElementById('login-password').value='';
+    showPage('page-employee');
+    renderEmployeeDashboard();
+  } catch(e){
+    pwErr.textContent = e.message==='Incorrect password' ? 'Incorrect password. Try again.' : e.message;
+    pwErr.classList.add('show');
+    document.getElementById('login-password').value='';
+    document.getElementById('login-password').focus();
+  } finally {
+    btn.disabled=false; btn.textContent='Log In';
+  }
+}
+
+async function doEmpLogout(){
+  clearInterval(timerInterval); clearInterval(statsInterval);
+  try { await POST('/employee-logout'); } catch(e){}
+  currentEmp=null;
+  showPage('page-home');
+  loadLoginDropdown();
+}
+
+// ─── Employee Dashboard ────────────────────────────────────────────────────
+let empWeekOffset=0;
+function changeEmpWeek(d){ empWeekOffset+=d; renderDayLog(); }
+
+async function renderEmployeeDashboard(){
+  if(!currentEmp) return;
+  const emp=currentEmp;
+
+  document.getElementById('topbar-emp-name').textContent = emp.name;
+  const av=document.getElementById('emp-avatar');
+  av.style.background=avatarColor(emp.name); av.textContent=initials(emp.name);
+  document.getElementById('emp-name').textContent=emp.name;
+
+  try {
+    const {start,end} = weekRange(0);
+    const [activeList, weekEntries] = await Promise.all([
+      GET('/active'),
+      GET('/entries?start='+toDateStr(start)+'&end='+toDateStr(end))
+    ]);
+
+    const myActive = activeList.find(a=>a.employee_id===emp.id);
+    updateClockBtn(myActive);
+    await updateTimerDisplay(myActive);
+    updateStatsDisplay(emp, weekEntries, myActive);
+    await renderDayLog();
+  } catch(e){ showToast('Error: '+e.message); }
+}
+
+function updateClockBtn(active){
+  const btn=document.getElementById('clock-btn');
+  const breakBtn=document.getElementById('break-btn');
+  const sub=document.getElementById('emp-status-sub');
+  if(active){
+    btn.textContent='Clock Out'; btn.className='btn btn-red';
+    sub.textContent='● Currently clocked in'; sub.style.color='var(--green)';
+    breakBtn.style.display='inline-flex';
+  } else {
+    btn.textContent='Clock In'; btn.className='btn btn-green';
+    sub.textContent='● Ready to clock in'; sub.style.color='var(--gray-400)';
+    breakBtn.style.display='none';
+  }
+}
+
+async function updateTimerDisplay(active){
+  clearInterval(timerInterval); clearInterval(statsInterval);
+  const disp=document.getElementById('timer-display');
+  const label=document.getElementById('timer-label');
+  const since=document.getElementById('timer-since');
+  const breakLogWrap=document.getElementById('break-log-wrap');
+  if(active){
+    const t0=new Date(active.clock_in);
+    // Use server timestamps (ms since epoch) — no timezone parsing needed
+    const srvData=await GET('/server-time');
+    const baseMs=Math.max(0, srvData.ms - (active.clock_in_ms || t0.getTime()));
+    const baseAt=Date.now();
+    disp.classList.add('running'); disp.classList.remove('on-break');
+    since.textContent='Clocked in at '+phtTimeFmt(active.clock_in);
+    // Check if on break
+    let onBreak=null;
+    try { onBreak=await GET('/active-break/'+currentEmp.id); } catch(e){}
+    const isOnBreak=onBreak&&onBreak.id;
+    if(isOnBreak){
+      const b0=new Date(onBreak.break_start);
+      const breakBaseMs=Math.max(0, srvData.ms - b0.getTime());
+      disp.classList.add('on-break'); disp.classList.remove('running');
+      label.textContent='☕ On Break';
+      document.getElementById('break-btn').textContent='▶ End Break';
+      document.getElementById('break-btn').className='btn btn-break-active';
+      const tick=()=>{disp.textContent=msToHMS(breakBaseMs+(Date.now()-baseAt));};
+      tick(); timerInterval=setInterval(tick,1000);
+    } else {
+      label.textContent='Currently working';
+      document.getElementById('break-btn').textContent='☕ Break';
+      document.getElementById('break-btn').className='btn btn-break';
+      const tick=()=>{disp.textContent=msToHMS(baseMs+(Date.now()-baseAt));};
+      tick(); timerInterval=setInterval(tick,1000);
+    }
+    // Load today's breaks
+    try {
+      const todayBreaks=await GET('/breaks?employee_id='+currentEmp.id);
+      const today=toDateStr(new Date());
+      const todayB=todayBreaks.filter(b=>b.break_start.slice(0,10)===today);
+      if(todayB.length){
+        breakLogWrap.style.display='block';
+        document.getElementById('break-log').innerHTML=todayB.map(b=>{
+          const s=new Date(b.break_start);
+          const e=b.break_end?new Date(b.break_end):null;
+          return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--gray-100);">'+
+            '<span>'+phtTimeFmt(b.break_start)+(b.break_end?' → '+phtTimeFmt(b.break_end):'<span style="color:var(--orange);"> → ongoing</span>')+'</span>'+
+            '<span style="color:var(--gray-400);">'+(e?msToHM(e-s):'...')+'</span></div>';
+        }).join('');
+      } else { breakLogWrap.style.display='none'; }
+    } catch(e){ breakLogWrap.style.display='none'; }
+    statsInterval=setInterval(()=>renderEmployeeDashboard(),60000);
+  } else {
+    disp.classList.remove('running','on-break'); disp.textContent='00:00:00';
+    label.textContent='Not clocked in'; since.textContent='';
+    breakLogWrap.style.display='none';
+  }
+}
+
+// ─── Break ───────────────────────────────────────────────────────────────────
+async function handleBreakBtn(){
+  if(!currentEmp) return;
+  const btn=document.getElementById('break-btn');
+  btn.disabled=true;
+  try {
+    let onBreak=null;
+    try { onBreak=await GET('/active-break/'+currentEmp.id); } catch(e){}
+    if(onBreak&&onBreak.id){
+      await POST('/break-end/'+currentEmp.id);
+      showToast('Break ended. Back to work!');
+    } else {
+      await POST('/break-start/'+currentEmp.id);
+      showToast('Break started. Take it easy ☕');
+    }
+    await renderEmployeeDashboard();
+  } catch(e){ showToast('Error: '+e.message); }
+  finally{ btn.disabled=false; }
+}
+
+function updateStatsDisplay(emp, entries, active){
+  const all = active ? [...entries,{employee_id:emp.id,clock_in:active.clock_in,clock_out:null}] : entries;
+  const now=new Date();
+  const s0=new Date(now); s0.setHours(0,0,0,0);
+  const e0=new Date(now); e0.setHours(23,59,59,999);
+  document.getElementById('stat-today').textContent = msToHM(calcMs(all,emp.id,s0,e0));
+
+  const {start,end}=weekRange(0);
+  const weekMs=calcMs(all,emp.id,start,end);
+  // Per-day OT for employee stats
+  const dailyLimitMs=(emp.daily_hours||8)*3600000;
+  const DAYS7=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let weekOtMs=0;
+  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(d.getDate()+i);const s0=new Date(d);s0.setHours(0,0,0,0);const e0=new Date(d);e0.setHours(23,59,59,999);const dm=calcMs(all,emp.id,s0,e0);weekOtMs+=Math.max(0,dm-dailyLimitMs);}
+  document.getElementById('stat-week').textContent=msToHM(weekMs);
+  document.getElementById('stat-ot').textContent=msToHM(weekOtMs);
+  document.getElementById('stat-ot-sub').textContent='Above '+(emp.daily_hours||8)+'h/day';
+
+  const weekH=weekMs/3600000;
+  const regH=emp.regular_hours||40;
+  const pct=Math.min(100,regH>0?(weekH/regH)*100:0);
+  const fill=document.getElementById('bar-fill');
+  fill.style.width=pct+'%'; fill.className='week-bar-fill'+(weekH>regH?' ot':'');
+  document.getElementById('bar-left').textContent=fmtH(weekH)+' of '+regH+'h regular';
+  document.getElementById('bar-right').textContent=Math.round(pct)+'%';
+}
+
+async function renderDayLog(){
+  if(!currentEmp) return;
+  const emp=currentEmp;
+  const {start,end}=weekRange(empWeekOffset*7);
+  const isCurrentWeek=(empWeekOffset===0);
+
+  // Update week label
+  document.getElementById('emp-week-label').textContent=fmtDate(start)+' – '+fmtDate(end);
+
+  try {
+    const [entries, activeList, allBreaks] = await Promise.all([
+      GET('/entries?start='+toDateStr(start)+'&end='+toDateStr(end)),
+      isCurrentWeek ? GET('/active') : Promise.resolve([]),
+      GET('/breaks?employee_id='+emp.id)
+    ]);
+
+    const myActive = isCurrentWeek ? activeList.find(a=>a.employee_id===emp.id) : null;
+    // Merge active entry into list for current week
+    const allEntries=[...entries];
+    if(myActive && !entries.find(e=>e.id===myActive.entry_id))
+      allEntries.push({id:myActive.entry_id, employee_id:emp.id, clock_in:myActive.clock_in, clock_out:null});
+
+    const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    let html='';
+
+    for(let i=0;i<7;i++){
+      const day=new Date(start); day.setDate(start.getDate()+i);
+      const dateStr=toDateStr(day);
+      const today=sameDay(day,new Date());
+      const dayEntries=allEntries.filter(e=>e.clock_in.slice(0,10)===dateStr);
+      const s0=new Date(day); s0.setHours(0,0,0,0);
+      const e0=new Date(day); e0.setHours(23,59,59,999);
+      const dayMs=calcMs(allEntries,emp.id,s0,e0);
+      const dayLabel=DAYS[i]+' '+(day.getMonth()+1)+'/'+day.getDate()+(today?' · Today':'');
+      const uid='day-body-'+i;
+
+      let bodyHtml='';
+      if(dayEntries.length===0){
+        bodyHtml='<div class="day-rest">No work recorded</div>';
+      } else {
+        bodyHtml=dayEntries.map(entry=>{
+          const ci=phDate(entry.clock_in);
+          const co=entry.clock_out?phDate(entry.clock_out):null;
+          const isActive=!entry.clock_out;
+          const entryMs=co?(co-ci):0;
+          const entryBreaks=allBreaks.filter(b=>b.entry_id===entry.id);
+          const totalBreakMs=entryBreaks.reduce((sum,b)=>{
+            if(!b.break_end) return sum;
+            return sum+(new Date(b.break_end)-new Date(b.break_start));
+          },0);
+
+          let timesHtml=
+            '<span class="badge badge-green">▶ '+phtTimeFmt(entry.clock_in)+'</span>'+
+            '<span style="color:var(--gray-400);">→</span>'+
+            (co
+              ? '<span class="badge badge-gray">■ '+phtTimeFmt(entry.clock_out)+'</span>'
+              : '<span class="badge badge-green" style="animation:pulse 1.5s infinite;">● Active</span>'
+            );
+
+          let summaryHtml='';
+          if(co){
+            summaryHtml='<div style="font-size:11px;color:var(--gray-400);margin-top:4px;display:flex;gap:12px;">'+
+              '<span>Total: <strong style="color:var(--gray-700);">'+msToHM(entryMs)+'</strong></span>'+
+              (totalBreakMs>0?'<span>Breaks: <strong style="color:var(--orange);">'+msToHM(totalBreakMs)+'</strong></span>':'')+'</div>';
+          }
+
+          let breaksHtml='';
+          if(entryBreaks.length){
+            breaksHtml='<div class="break-list">'+
+              entryBreaks.map(b=>{
+                const bs=new Date(b.break_start);
+                const be=b.break_end?new Date(b.break_end):null;
+                return '<div class="break-item">'+
+                  '<span>☕ '+phtTimeFmt(b.break_start)+
+                  (be?' → '+phtTimeFmt(b.break_end):'<span style="color:var(--orange);"> → ongoing</span>')+
+                  '</span>'+
+                  '<span>'+(be?msToHM(be-bs):'...')+'</span>'+
+                '</div>';
+              }).join('')+
+            '</div>';
+          }
+
+          return '<div class="entry-row">'+
+            '<div style="width:100%;">'+
+              '<div class="entry-times">'+timesHtml+'</div>'+
+              summaryHtml+
+              breaksHtml+
+            '</div>'+
+          '</div>';
+        }).join('');
+      }
+
+      html+=
+        '<div class="day-entry'+(today?' today':'')+'" onclick="toggleDayBody(\''+uid+'\')" >'+
+          '<div class="day-entry-header">'+
+            '<span class="day-label">'+dayLabel+'</span>'+
+            '<div style="display:flex;align-items:center;gap:8px;">'+
+              '<span class="day-total'+(dayMs===0?' zero':'')+'">'+
+                (dayMs>0?msToHM(dayMs):'—')+
+              '</span>'+
+              (dayEntries.length?'<span style="font-size:10px;color:var(--gray-400);">▼</span>':'<span style="font-size:10px;color:var(--gray-200);">▼</span>')+
+            '</div>'+
+          '</div>'+
+          '<div id="'+uid+'" class="day-body'+(today?' open':'')+'">'+bodyHtml+'</div>'+
+        '</div>';
+    }
+
+    document.getElementById('day-list').innerHTML=html;
+  } catch(e){ document.getElementById('day-list').innerHTML='<div style="color:var(--gray-400);font-size:13px;">Could not load log.</div>'; }
+}
+
+function toggleDayBody(id){
+  const el=document.getElementById(id);
+  if(el) el.classList.toggle('open');
+}
+
+// ─── Clock In / Out ────────────────────────────────────────────────────────
+async function handleClockBtn(){
+  if(!currentEmp) return;
+  const btn=document.getElementById('clock-btn');
+  btn.disabled=true;
+  try {
+    const active=(await GET('/active')).find(a=>a.employee_id===currentEmp.id);
+    if(active){
+      document.getElementById('clockout-dur').textContent=msToHMS(Date.now()-new Date(active.clock_in).getTime());
+      openModal('modal-clockout');
+    } else {
+      await POST('/clock-in/'+currentEmp.id);
+      showToast('Clocked in!');
+      renderEmployeeDashboard();
+    }
+  } catch(e){ showToast('Error: '+e.message); }
+  finally{ btn.disabled=false; }
+}
+
+async function confirmClockOut(){
+  closeModal('modal-clockout');
+  if(!currentEmp) return;
+  try {
+    await POST('/clock-out/'+currentEmp.id);
+    clearInterval(timerInterval); clearInterval(statsInterval);
+    showToast('Clocked out. See you next time!');
+    renderEmployeeDashboard();
+  } catch(e){ showToast('Error: '+e.message); }
+}
+
+// ─── Change own password ────────────────────────────────────────────────────
+function openChangePasswordModal(){
+  document.getElementById('cpw-cur').value='';
+  document.getElementById('cpw-new').value='';
+  document.getElementById('cpw-cfm').value='';
+  document.getElementById('cpw-err').classList.remove('show');
+  openModal('modal-change-pw');
+}
+
+async function doChangePassword(){
+  const cur=document.getElementById('cpw-cur').value;
+  const nw =document.getElementById('cpw-new').value;
+  const cf =document.getElementById('cpw-cfm').value;
+  const err=document.getElementById('cpw-err');
+  err.classList.remove('show');
+
+  if(!cur||!nw)         {err.textContent='Please fill in all fields.'; err.classList.add('show'); return;}
+  if(nw!==cf)           {err.textContent='Passwords do not match.';    err.classList.add('show'); return;}
+  if(nw.length<3)       {err.textContent='Password must be at least 3 characters.'; err.classList.add('show'); return;}
+
+  const btn=document.getElementById('cpw-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try {
+    await POST('/change-password',{current:cur,new:nw});
+    closeModal('modal-change-pw');
+    showToast('Password updated successfully!');
+  } catch(e){ err.textContent=e.message; err.classList.add('show'); }
+  finally{ btn.disabled=false; btn.textContent='Update Password'; }
+}
+
+// ─── Admin PIN ──────────────────────────────────────────────────────────────
+function goAdminLogin(){
+  pinBuffer=''; updatePinDisplay();
+  document.getElementById('pin-error').textContent='';
+  showPage('page-admin-login');
+}
+function pinKey(k){if(pinBuffer.length>=4)return; pinBuffer+=k; updatePinDisplay(); if(pinBuffer.length===4) setTimeout(checkPin,150);}
+function pinBack(){pinBuffer=pinBuffer.slice(0,-1); updatePinDisplay();}
+function pinClear(){pinBuffer=''; updatePinDisplay();}
+function updatePinDisplay(){for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled',i<pinBuffer.length);}
+
+async function checkPin(){
+  try {
+    await POST('/admin-login',{pin:pinBuffer});
+    await loadAdminData();
+    showPage('page-admin');
+  } catch(e){
+    document.getElementById('pin-error').textContent='Incorrect PIN. Try again.';
+    pinBuffer=''; updatePinDisplay();
+  }
+}
+
+async function doAdminLogout(){
+  try{ await POST('/admin-logout'); }catch(e){}
+  showPage('page-home');
+}
+
+// ─── Admin data ─────────────────────────────────────────────────────────────
+async function loadAdminData(){
+  const [emps,s]=await Promise.all([GET('/employees'),GET('/settings')]);
+  empCache=emps;
+  document.getElementById('s-ot-mult').value=s.ot_mult||1.5;
+  renderPayroll(); renderTeam(); renderTimelog();
+}
+
+function switchTab(name){
+  const names=['payroll','timelog','team','payments','settings'];
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',names[i]===name));
+  names.forEach(n=>document.getElementById('tab-'+n).classList.toggle('active',n===name));
+  if(name==='payroll')  renderPayroll();
+  if(name==='timelog')  renderTimelog();
+  if(name==='team')     renderTeam();
+  if(name==='payments') renderPayments();
+}
+
+// ─── Payroll ────────────────────────────────────────────────────────────────
+function changeWeek(d){weekOffset+=d; renderPayroll();}
+function jumpToToday(){weekOffset=0; renderPayroll();}
+function jumpToDate(val){
+  if(!val) return;
+  const picked=new Date(val+'T00:00:00+08:00');
+  const today=new Date(); today.setHours(0,0,0,0);
+  const diffDays=Math.round((picked-today)/86400000);
+  weekOffset=Math.round(diffDays/7);
+  renderPayroll();
+}
+
+async function renderPayroll(){
+  const {start,end}=weekRange(weekOffset*7);
+  const weekStartStr=toDateStr(start);
+  document.getElementById('week-label').textContent=fmtDate(start)+' – '+fmtDate(end);
+  try {
+    const [emps,entries,active,s,adjs]=await Promise.all([
+      GET('/employees'),
+      GET('/entries?start='+weekStartStr+'&end='+toDateStr(end)),
+      GET('/active'),
+      GET('/settings'),
+      GET('/adjustments?week_start='+weekStartStr)
+    ]);
+    empCache=emps;
+
+    // Populate filter dropdown (preserve selection)
+    const filterSel=document.getElementById('payroll-filter-emp');
+    const savedFilter=filterSel.value;
+    filterSel.innerHTML='<option value="">All Subcontractors</option>'+
+      emps.map(e=>'<option value="'+e.id+'"'+(e.id===savedFilter?' selected':'')+'>'+e.name+'</option>').join('');
+    const filterId=filterSel.value;
+    const otMult=parseFloat(s.ot_mult)||1.5;
+    const activeIds=new Set(active.map(a=>a.employee_id));
+    const adjMap={};
+    adjs.forEach(a=>adjMap[a.employee_id]=a);
+    const allEntries=[...entries];
+    active.forEach(a=>{
+      const ci=new Date(a.clock_in);
+      if(ci>=start&&ci<=end&&!entries.find(e=>e.id===a.entry_id))
+        allEntries.push({id:a.entry_id,employee_id:a.employee_id,clock_in:a.clock_in,clock_out:null});
+    });
+
+    let tPay=0,tHours=0,tOT=0,tBonus=0,tAllowance=0;
+    const filteredEmps=filterId?emps.filter(e=>e.id===filterId):emps;
+    const rows=filteredEmps.map(emp=>{
+      const dailyH=(emp.daily_hours||8)*3600000;
+      const otRate=emp.hourly_rate||0;       // OT rate: per hour
+      const dailyRate=emp.daily_rate||0;     // Base rate: per day
+      // Calculate actual time per day
+      const empEntries=allEntries.filter(e=>e.employee_id===emp.id);
+      const dayMap={};
+      empEntries.forEach(e=>{
+        const ci=phDate(e.clock_in), co=e.clock_out?phDate(e.clock_out):new Date();
+        if(co<start||ci>end) return;
+        const day=e.clock_in.slice(0,10);
+        dayMap[day]=(dayMap[day]||0)+Math.max(0,Math.min(co,end)-Math.max(ci,start));
+      });
+      // OT per day + +1hr paid break per OT day
+      let actualTotalMs=0, actualOtMs=0, otDays=0;
+      Object.values(dayMap).forEach(d=>{
+        actualTotalMs+=d;
+        const dayOt=Math.max(0,d-dailyH);
+        if(dayOt>0) otDays++;
+        actualOtMs+=dayOt;
+      });
+      const otMs=actualOtMs+otDays*3600000; // include +1hr paid break per OT day
+      // Days worked & regular hours: use days_worked × daily_hours (not actual sum)
+      const daysWorked=new Set(empEntries.map(e=>e.clock_in.slice(0,10))).size;
+      const regDisplayH=daysWorked*(emp.daily_hours||8); // for display
+      const actualTotalH=actualTotalMs/3600000;          // actual hours (gray label)
+      // Pay: daily rate × days for regular; hourly OT rate × OT hours for OT
+      const rPay=dailyRate*daysWorked;
+      const otH=otMs/3600000;
+      const oPay=otH*otRate*otMult;
+      // Allowance
+      const allowAmt=emp.allowance||0;
+      const allowType=emp.allowance_type||'weekly';
+      const allowTotal=(allowAmt>0&&daysWorked>0)?(allowType==='daily'?allowAmt*daysWorked:allowAmt):0;
+      const adj=adjMap[emp.id]||{bonus:0,notes:''};
+      const bonus=adj.bonus||0;
+      const total=rPay+oPay+allowTotal+bonus;
+      tPay+=total; tHours+=actualTotalH; tOT+=otH; tBonus+=bonus; tAllowance+=allowTotal;
+      return {emp,actualTotalH,otH,regDisplayH,dailyH:emp.daily_hours||8,otRate,dailyRate,rPay,oPay,allowTotal,allowAmt,allowType,daysWorked,otDays,bonus,notes:adj.notes||'',total,on:activeIds.has(emp.id),weekStart:weekStartStr};
+    });
+
+    document.getElementById('payroll-stats').innerHTML=
+      sc('Total Payroll','PHP '+tPay.toFixed(2),'This week')+
+      sc('Total Hours',fmtH(tHours),'Team combined','green')+
+      sc('Allowances','PHP '+tAllowance.toFixed(2),'This week','purple')+
+      sc('Bonuses','PHP '+tBonus.toFixed(2),'This week','orange');
+
+    _lastPayrollRows=rows;
+    const tbody=document.getElementById('payroll-tbody');
+    if(!rows.length){
+      tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:32px;">'+(filterId?'No subcontractor found.':'No subcontractors yet.')+'</td></tr>';
+      return;
+    }
+    tbody.innerHTML=rows.map(r=>
+      '<tr class="'+(r.otH>0?'payroll-row-ot':'')+'">' +
+      '<td><div style="display:flex;align-items:center;gap:8px;">'+avDiv(r.emp.name,30)+
+        '<div><div style="font-weight:600;">'+r.emp.name+'</div>'+
+        '<div style="font-size:11px;color:var(--gray-400);">PHP '+r.dailyRate.toFixed(2)+'/day · PHP '+r.otRate.toFixed(2)+'/hr OT · '+r.dailyH+'h/day</div></div></div></td>' +
+      '<td>'+(r.on?'<span class="badge badge-green">● Active</span>':'<span class="badge badge-gray">Offline</span>')+'</td>' +
+      '<td>'+fmtH(r.regDisplayH)+'<div style="font-size:10px;color:var(--gray-400);">'+r.daysWorked+'d × '+r.dailyH+'h · actual: '+fmtH(r.actualTotalH)+'</div></td>' +
+      '<td>'+(r.otH>0?'<span style="color:var(--orange);font-weight:600;">'+fmtH(r.otH)+'</span>'+(r.otDays>0?'<div style="font-size:10px;color:var(--gray-400);">incl. '+r.otDays+'×1h break</div>':''):'<span style="color:var(--gray-300);">—</span>')+'</td>' +
+      '<td>PHP '+r.rPay.toFixed(2)+'<div style="font-size:10px;color:var(--gray-400);">'+r.daysWorked+'d × PHP '+r.dailyRate.toFixed(2)+'</div></td>' +
+      '<td>'+(r.otH>0?'<span style="color:var(--orange);">PHP '+r.oPay.toFixed(2)+'</span>':'<span style="color:var(--gray-300);">—</span>')+'</td>' +
+      '<td>'+(r.allowTotal>0
+        ?'<span style="color:var(--primary);font-weight:600;">PHP '+r.allowTotal.toFixed(2)+'</span>'+
+          '<div style="font-size:10px;color:var(--gray-400);">'+
+            (r.allowType==='daily'?'PHP '+r.allowAmt.toFixed(2)+'/day × '+r.daysWorked+'d':'PHP '+r.allowAmt.toFixed(2)+'/wk')+
+          '</div>'
+        :'<span style="color:var(--gray-300);">—</span>')+'</td>' +
+      '<td><div style="display:flex;align-items:center;gap:6px;">' +
+        (r.bonus>0?'<span style="color:var(--green);font-weight:600;">PHP '+r.bonus.toFixed(2)+'</span>':'<span style="color:var(--gray-300);">—</span>') +
+        '<button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px;" title="'+(r.notes?'Note: '+r.notes:'')+'" onclick="openBonusModal(\''+r.emp.id+'\',\''+r.weekStart+'\','+r.bonus+',\''+encodeURIComponent(r.notes)+'\')">✏️</button>' +
+      '</div></td>' +
+      '<td><strong>PHP '+r.total.toFixed(2)+'</strong>'+(r.notes?'<div style="font-size:10px;color:var(--gray-400);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+r.notes+'">📝 '+r.notes+'</div>':'')+'</td></tr>'
+    ).join('');
+  } catch(e){ showToast('Payroll error: '+e.message); }
+}
+
+function sc(label,value,sub,cls){
+  return '<div class="stat-card'+(cls?' '+cls:'')+'">'+'<div class="stat-label">'+label+'</div>'+
+    '<div class="stat-value">'+value+'</div>'+
+    '<div class="stat-sub">'+sub+'</div></div>';
+}
+
+// ─── Time Log ───────────────────────────────────────────────────────────────
+let _lastTimelogEntries=null, _lastTimelogLabel='';
+
+function setTimelogWeek(offset){
+  const {start,end}=weekRange(offset*7);
+  document.getElementById('log-filter-start').value=toDateStr(start);
+  document.getElementById('log-filter-end').value=toDateStr(end);
+  renderTimelog();
+}
+
+async function renderTimelog(){
+  const sel=document.getElementById('log-filter-emp');
+  const saved=sel.value;
+  sel.innerHTML='<option value="">All Subcontractors</option>'+
+    empCache.map(e=>'<option value="'+e.id+'"'+(e.id===saved?' selected':'')+'>'+e.name+'</option>').join('');
+
+  const fEmp=sel.value;
+  const fStart=document.getElementById('log-filter-start').value;
+  const fEnd=document.getElementById('log-filter-end').value;
+  let qs='';
+  if(fEmp)   qs+=(qs?'&':'?')+'employee_id='+fEmp;
+  if(fStart) qs+=(qs?'&':'?')+'start='+fStart;
+  if(fEnd)   qs+=(qs?'&':'?')+'end='+fEnd;
+  // Build label for export header
+  const empName=fEmp?(empCache.find(e=>e.id===fEmp)?.name||'All'):'All Subcontractors';
+  const dateRange=(fStart||fEnd)?((fStart||'?')+' to '+(fEnd||'?')):'All dates';
+  _lastTimelogLabel=empName+' — '+dateRange;
+
+  try {
+    const entries=await GET('/entries'+qs);
+    _lastTimelogEntries=entries;
+    const tbody=document.getElementById('timelog-tbody');
+    const empty=document.getElementById('timelog-empty');
+    if(!entries.length){tbody.innerHTML='';empty.style.display='block';return;}
+    empty.style.display='none';
+    tbody.innerHTML=entries.map(e=>{
+      const emp=empCache.find(em=>em.id===e.employee_id);
+      const name=emp?emp.name:'Unknown';
+      const ci=phDate(e.clock_in);
+      const co=e.clock_out?phDate(e.clock_out):null;
+      const durMs=co?(co-ci):(Date.now()-ci);
+      const dur=co?msToHM(durMs):'<span class="badge badge-green">● '+msToHM(durMs)+'</span>';
+      const empForOt=empCache.find(em=>em.id===e.employee_id);
+      const dailyLimitMs=(empForOt?.daily_hours||8)*3600000;
+      const entryOtMs=co?Math.max(0,durMs-dailyLimitMs):0;
+      const otCell=entryOtMs>0?'<span style="color:var(--orange);font-weight:600;">'+msToHM(entryOtMs)+'</span>':'<span style="color:var(--gray-300);">—</span>';
+      return '<tr>'+
+        '<td><div style="display:flex;align-items:center;gap:8px;">'+avDiv(name,26)+name+'</div></td>'+
+        '<td>'+phtDateFmt(e.clock_in)+'</td>'+
+        '<td>'+phtTimeFmt(e.clock_in)+'</td>'+
+        '<td>'+(e.clock_out?phtTimeFmt(e.clock_out):'<span style="color:var(--green)">Active</span>')+'</td>'+
+        '<td>'+dur+'</td>'+
+        '<td>'+otCell+'</td>'+
+        '<td><div style="display:flex;gap:8px;">'+
+          '<button class="btn btn-ghost btn-sm" onclick="openEditEntryModal(\''+e.id+'\')">Edit</button>'+
+          '<button class="btn btn-danger btn-sm" onclick="confirmDeleteEntry(\''+e.id+'\')">Del</button>'+
+        '</div></td></tr>';
+    }).join('');
+  } catch(e){ showToast('Error: '+e.message); }
+}
+
+// ─── Team ────────────────────────────────────────────────────────────────────
+async function renderTeam(){
+  try {
+    const [emps,active,s]=await Promise.all([GET('/employees'),GET('/active'),GET('/settings')]);
+    empCache=emps;
+    const activeIds=new Set(active.map(a=>a.employee_id));
+    const otMult=parseFloat(s.ot_mult)||1.5;
+
+    // Active-now panel
+    const panel=document.getElementById('active-now-panel');
+    const activeEmps=emps.filter(e=>activeIds.has(e.id));
+    if(activeEmps.length){
+      document.getElementById('active-now-count').textContent=activeEmps.length+' online';
+      document.getElementById('active-now-list').innerHTML=activeEmps.map(emp=>{
+        const a=active.find(x=>x.employee_id===emp.id);
+        const since=a?phtTimeFmt(a.clock_in):'';
+        return '<div style="display:flex;align-items:center;gap:8px;background:white;border:1.5px solid #f59e0b44;border-radius:10px;padding:8px 12px;">'+
+          avDiv(emp.name,28)+
+          '<div><div style="font-weight:600;font-size:13px;">'+emp.name+'</div>'+
+          '<div style="font-size:11px;color:var(--gray-500);">Since '+since+'</div></div>'+
+          '<button class="btn btn-sm" style="margin-left:8px;background:var(--red);color:white;font-weight:700;border:none;" onclick="adminClockOut(\''+emp.id+'\')">⏏ Force Out</button>'+
+          '</div>';
+      }).join('');
+      panel.style.display='block';
+    } else {
+      panel.style.display='none';
+    }
+
+    const tbody=document.getElementById('team-tbody');
+    const empty=document.getElementById('team-empty');
+    if(!emps.length){tbody.innerHTML='';empty.style.display='block';return;}
+    empty.style.display='none';
+    tbody.innerHTML=emps.map(emp=>{
+      const on=activeIds.has(emp.id);
+      return '<tr>'+
+        '<td><div style="display:flex;align-items:center;gap:8px;">'+avDiv(emp.name,32)+'<strong>'+emp.name+'</strong></div></td>'+
+        '<td>PHP '+(emp.daily_rate||0).toFixed(2)+'/day</td>'+
+        '<td>PHP '+(emp.hourly_rate||0).toFixed(2)+'/hr · '+otMult+'x</td>'+
+        '<td>'+(emp.daily_hours||8)+'h/day</td>'+
+        '<td>'+((emp.allowance||0)>0?'PHP '+(emp.allowance||0).toFixed(2)+'/'+(emp.allowance_type==='daily'?'day':'wk'):'<span style="color:var(--gray-300);">—</span>')+'</td>'+
+        '<td><div style="display:flex;align-items:center;gap:6px;"><span id="pw-'+emp.id+'" style="font-family:monospace;background:var(--gray-100);padding:2px 8px;border-radius:4px;font-size:13px;letter-spacing:2px;">••••••</span><button class="btn btn-ghost btn-sm" style="padding:4px 8px;" aria-label="Show password for '+emp.name+'" onclick="togglePw(\''+emp.id+'\',\''+encodeURIComponent(emp.plain_password||'1234')+'\')" id="pw-eye-'+emp.id+'"><span aria-hidden="true">👁</span></button><button class="btn btn-ghost btn-sm" onclick="openResetPwModal(\''+emp.id+'\',\''+emp.name+'\')"><span aria-hidden="true">✏️</span> Edit</button></div></td>'+
+        '<td>'+(on?'<span class="badge badge-green">● Active</span>':'<span class="badge badge-gray">Offline</span>')+'</td>'+
+        '<td><div style="display:flex;gap:8px;">'+
+          '<button class="btn btn-ghost btn-sm" onclick="openEditEmpModal(\''+emp.id+'\')">Edit</button>'+
+          '<button class="btn btn-danger btn-sm" onclick="confirmDeleteEmp(\''+emp.id+'\')">Delete</button>'+
+          (on?'<button class="btn btn-sm" style="background:var(--red);color:white;font-weight:700;border:none;" onclick="adminClockOut(\''+emp.id+'\')">⏏ Force Out</button>':'')+
+        '</div></td></tr>';
+    }).join('');
+  } catch(e){ showToast('Error: '+e.message); }
+}
+
+async function adminClockOut(empId){
+  const emp=empCache.find(e=>e.id===empId);
+  if(!confirm('Force clock out '+(emp?emp.name:'this employee')+'? Their current session will end now.')) return;
+  try{ await POST('/clock-out/'+empId); showToast((emp?emp.name:'Employee')+' has been clocked out.'); renderTeam(); renderPayroll(); }
+  catch(e){ showToast('Error: '+e.message); }
+}
+
+// ─── Bonus / Notes ──────────────────────────────────────────────────────────
+let bonusEmpId='', bonusWeekStart='';
+function openBonusModal(empId, weekStart, currentBonus, encodedNotes){
+  bonusEmpId=empId; bonusWeekStart=weekStart;
+  const emp=empCache.find(e=>e.id===empId);
+  document.getElementById('bonus-emp-label').textContent=(emp?emp.name+' — ':'')+weekStart;
+  document.getElementById('bonus-amount').value=currentBonus||'';
+  document.getElementById('bonus-notes').value=decodeURIComponent(encodedNotes||'');
+  openModal('modal-bonus');
+  setTimeout(()=>document.getElementById('bonus-amount').focus(),100);
+}
+async function saveBonusAdjustment(){
+  const bonus=parseFloat(document.getElementById('bonus-amount').value)||0;
+  const notes=document.getElementById('bonus-notes').value.trim();
+  const btn=document.getElementById('bonus-save-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try {
+    await POST('/adjustments',{employee_id:bonusEmpId,week_start:bonusWeekStart,bonus,notes});
+    closeModal('modal-bonus');
+    await renderPayroll();
+    showToast('Bonus saved!');
+  } catch(e){ showToast('Error: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='Save'; }
+}
+
+// ─── Employee CRUD ───────────────────────────────────────────────────────────
+function openAddEmpModal(){
+  editingEmpId=null;
+  document.getElementById('modal-emp-title').textContent='Add Subcontractor';
+  document.getElementById('ef-name').value='';
+  document.getElementById('ef-daily-rate').value='';
+  document.getElementById('ef-rate').value='';
+  document.getElementById('ef-daily-hours').value='8';
+  document.getElementById('ef-allowance').value='';
+  document.getElementById('ef-allowance-type').value='weekly';
+  document.getElementById('ef-pw').value='';
+  document.getElementById('ef-pw-wrap').style.display='block';
+  document.getElementById('ef-name').classList.remove('err');
+  document.getElementById('ef-name-err').classList.remove('show');
+  openModal('modal-emp');
+  setTimeout(()=>document.getElementById('ef-name').focus(),100);
+}
+
+function openEditEmpModal(id){
+  const emp=empCache.find(e=>e.id===id); if(!emp) return;
+  editingEmpId=id;
+  document.getElementById('modal-emp-title').textContent='Edit Subcontractor';
+  document.getElementById('ef-name').value=emp.name;
+  document.getElementById('ef-daily-rate').value=emp.daily_rate||'';
+  document.getElementById('ef-rate').value=emp.hourly_rate||'';
+  document.getElementById('ef-daily-hours').value=emp.daily_hours||8;
+  document.getElementById('ef-allowance').value=emp.allowance||'';
+  document.getElementById('ef-allowance-type').value=emp.allowance_type||'weekly';
+  document.getElementById('ef-pw-wrap').style.display='none';
+  document.getElementById('ef-name').classList.remove('err');
+  document.getElementById('ef-name-err').classList.remove('show');
+  openModal('modal-emp');
+}
+
+async function saveEmployee(){
+  const nameEl=document.getElementById('ef-name');
+  const name=nameEl.value.trim();
+  const dailyRate=parseFloat(document.getElementById('ef-daily-rate').value)||0;
+  const rate=parseFloat(document.getElementById('ef-rate').value)||0;
+  const dailyHours=parseFloat(document.getElementById('ef-daily-hours').value)||8;
+  const hours=Math.round(dailyHours*5*10)/10; // auto: daily × 5 days
+  const allowance=parseFloat(document.getElementById('ef-allowance').value)||0;
+  const allowanceType=document.getElementById('ef-allowance-type').value||'weekly';
+  const pw=document.getElementById('ef-pw').value||DEFAULT_PW;
+
+  if(!name){nameEl.classList.add('err'); document.getElementById('ef-name-err').classList.add('show'); nameEl.focus(); return;}
+  nameEl.classList.remove('err'); document.getElementById('ef-name-err').classList.remove('show');
+
+  const btn=document.getElementById('emp-save-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try {
+    const payload={name,daily_rate:dailyRate,hourly_rate:rate,regular_hours:hours,daily_hours:dailyHours,allowance,allowance_type:allowanceType};
+    if(!editingEmpId) payload.password=pw||'1234';
+    if(editingEmpId) await PUT('/employees/'+editingEmpId,payload);
+    else             await POST('/employees',payload);
+    closeModal('modal-emp');
+    await loadAdminData();
+    showToast(editingEmpId?'Subcontractor updated.':'"'+name+'" added!');
+  } catch(e){ showToast('Error: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='Save Subcontractor'; }
+}
+
+function confirmDeleteEmp(id){
+  const emp=empCache.find(e=>e.id===id); if(!emp) return;
+  document.getElementById('confirm-title').textContent='Delete Subcontractor';
+  document.getElementById('confirm-msg').textContent='Delete "'+emp.name+'"? All their time entries will also be deleted. This cannot be undone.';
+  document.getElementById('confirm-ok').onclick=async()=>{
+    try{ await DEL('/employees/'+id); closeModal('modal-confirm'); await loadAdminData(); showToast('Subcontractor deleted.'); }
+    catch(e){ showToast('Error: '+e.message); }
+  };
+  openModal('modal-confirm');
+}
+
+// ─── Reset password (admin) ──────────────────────────────────────────────────
+function togglePw(id, encoded){
+  const span=document.getElementById('pw-'+id);
+  const btn=document.getElementById('pw-eye-'+id);
+  if(span.dataset.visible==='1'){
+    span.textContent='••••••'; span.style.letterSpacing='2px';
+    span.dataset.visible='0'; btn.textContent='👁';
+  } else {
+    span.textContent=decodeURIComponent(encoded); span.style.letterSpacing='normal';
+    span.dataset.visible='1'; btn.textContent='🙈';
+  }
+}
+
+function openResetPwModal(id,name){
+  resetPwForId=id;
+  document.getElementById('reset-pw-for').textContent='Set a new password for '+name+'.';
+  document.getElementById('reset-pw-val').value='';
+  openModal('modal-reset-pw');
+  setTimeout(()=>document.getElementById('reset-pw-val').focus(),100);
+}
+
+async function doResetPassword(){
+  const pw=document.getElementById('reset-pw-val').value.trim();
+  if(!pw){ showToast('Please enter a password.'); return; }
+  const btn=document.getElementById('reset-pw-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try {
+    await POST('/employees/'+resetPwForId+'/reset-password',{password:pw});
+    closeModal('modal-reset-pw');
+    showToast('Password reset successfully!');
+  } catch(e){ showToast('Error: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='Set Password'; }
+}
+
+// ─── Entry CRUD ──────────────────────────────────────────────────────────────
+async function openAddEntryModal(){
+  editingEntryId=null;
+  document.getElementById('modal-entry-title').textContent='Add Time Entry';
+  document.getElementById('entry-emp').innerHTML=empCache.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
+  const srvNow=(await GET('/server-time')).now.slice(0,10);
+  document.getElementById('entry-in-date').value=srvNow;
+  document.getElementById('entry-out-date').value=srvNow;
+  document.getElementById('entry-in').value=''; document.getElementById('entry-out').value='';
+  document.getElementById('entry-err').classList.remove('show');
+  openModal('modal-entry');
+}
+
+async function openEditEntryModal(id){
+  try {
+    const entries=await GET('/entries');
+    const entry=entries.find(e=>e.id===id); if(!entry) return;
+    editingEntryId=id;
+    document.getElementById('modal-entry-title').textContent='Edit Time Entry';
+    document.getElementById('entry-emp').innerHTML=empCache.map(e=>'<option value="'+e.id+'"'+(e.id===entry.employee_id?' selected':'')+'>'+e.name+'</option>').join('');
+    // Read directly from stored PHT string — no timezone conversion
+    document.getElementById('entry-in-date').value=entry.clock_in.slice(0,10);
+    document.getElementById('entry-in').value=entry.clock_in.slice(11,16);
+    document.getElementById('entry-out-date').value=entry.clock_out?entry.clock_out.slice(0,10):entry.clock_in.slice(0,10);
+    document.getElementById('entry-out').value=entry.clock_out?entry.clock_out.slice(11,16):'';
+    document.getElementById('entry-err').classList.remove('show');
+    openModal('modal-entry');
+  } catch(e){ showToast('Error: '+e.message); }
+}
+
+async function saveEntry(){
+  const empId=document.getElementById('entry-emp').value;
+  const inDate=document.getElementById('entry-in-date').value;
+  const inT=document.getElementById('entry-in').value;
+  const outDate=document.getElementById('entry-out-date').value;
+  const outT=document.getElementById('entry-out').value;
+  const errEl=document.getElementById('entry-err');
+  if(!empId||!inDate||!inT){errEl.classList.add('show');return;}
+  errEl.classList.remove('show');
+  const clockIn=inDate+'T'+inT+':00';
+  const clockOut=(outDate&&outT)?outDate+'T'+outT+':00':null;
+  const btn=document.getElementById('entry-save-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try {
+    const payload={employee_id:empId,clock_in:clockIn,clock_out:clockOut};
+    if(editingEntryId) await PUT('/entries/'+editingEntryId,payload);
+    else               await POST('/entries',payload);
+    closeModal('modal-entry');
+    renderTimelog(); renderPayroll();
+    showToast(editingEntryId?'Entry updated.':'Entry added.');
+  } catch(e){ showToast('Error: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='Save Entry'; }
+}
+
+function confirmDeleteEntry(id){
+  document.getElementById('confirm-title').textContent='Delete Entry';
+  document.getElementById('confirm-msg').textContent='Delete this time entry? This cannot be undone.';
+  document.getElementById('confirm-ok').onclick=async()=>{
+    try{ await DEL('/entries/'+id); closeModal('modal-confirm'); renderTimelog(); renderPayroll(); showToast('Entry deleted.'); }
+    catch(e){ showToast('Error: '+e.message); }
+  };
+  openModal('modal-confirm');
+}
+
+// ─── Settings ────────────────────────────────────────────────────────────────
+async function changeAdminPin(){
+  const cur=document.getElementById('s-cur-pin').value;
+  const nw=document.getElementById('s-new-pin').value;
+  const cf=document.getElementById('s-cfm-pin').value;
+  const err=document.getElementById('pin-chg-err');
+  err.style.display='none';
+  const s=await GET('/settings');
+  if(cur!==s.pin)          {err.textContent='Current PIN is incorrect.';      err.style.display='block';return;}
+  if(!/^\d{4}$/.test(nw))  {err.textContent='New PIN must be 4 digits.';      err.style.display='block';return;}
+  if(nw!==cf)              {err.textContent='PINs do not match.';              err.style.display='block';return;}
+  try{
+    await PUT('/settings',{pin:nw});
+    document.getElementById('s-cur-pin').value=''; document.getElementById('s-new-pin').value=''; document.getElementById('s-cfm-pin').value='';
+    showToast('Admin PIN updated!');
+  }catch(e){showToast('Error: '+e.message);}
+}
+
+async function saveOtMult(){
+  const v=parseFloat(document.getElementById('s-ot-mult').value);
+  if(isNaN(v)||v<1){showToast('Must be 1 or greater.');return;}
+  try{await PUT('/settings',{ot_mult:String(v)}); showToast('Saved!');}
+  catch(e){showToast('Error: '+e.message);}
+}
+
+// ─── Payroll Download / Print ────────────────────────────────────────────────
+let _lastPayrollRows=null; // cache set after each renderPayroll()
+
+function downloadPayrollTxt(){
+  const rows=_lastPayrollRows; if(!rows||!rows.length){showToast('No payroll data to download.');return;}
+  const weekLbl=document.getElementById('week-label').textContent;
+  const sep='-'.repeat(90);
+  let txt='PAYROLL — '+weekLbl+'\n'+sep+'\n';
+  const col=(s,w)=>String(s??'').padEnd(w).slice(0,w);
+  txt+=col('NAME',22)+col('DAYS',6)+col('REG HRS',10)+col('OT HRS',10)+col('REG PAY',12)+col('OT PAY',12)+col('ALLOW',12)+col('BONUS',10)+col('TOTAL',12)+'\n';
+  txt+=sep+'\n';
+  rows.forEach(r=>{
+    txt+=col(r.emp.name,22)+col(r.daysWorked+'d',6)+col(fmtH(r.regDisplayH),10)+col(r.otH>0?fmtH(r.otH)+'*':'—',10)+
+         col('PHP '+r.rPay.toFixed(2),12)+col(r.otH>0?'PHP '+r.oPay.toFixed(2):'—',12)+
+         col(r.allowTotal>0?'PHP '+r.allowTotal.toFixed(2):'—',12)+
+         col(r.bonus>0?'PHP '+r.bonus.toFixed(2):'—',10)+
+         col('PHP '+r.total.toFixed(2),12)+'\n';
+    if(r.notes) txt+='  Note: '+r.notes+'\n';
+  });
+  txt+=sep+'\n';
+  const totPay=rows.reduce((s,r)=>s+r.total,0);
+  txt+=col('TOTAL',54)+col('PHP '+totPay.toFixed(2),12)+'\n';
+  txt+='\n* OT includes +1hr paid break per OT day\n';
+  const blob=new Blob([txt],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='payroll-'+weekLbl.replace(/[^a-z0-9]/gi,'-')+'.txt';
+  a.click();
+}
+
+function printPayroll(){
+  const rows=_lastPayrollRows; if(!rows||!rows.length){showToast('No payroll data to print.');return;}
+  const weekLbl=document.getElementById('week-label').textContent;
+  let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Payroll — '+weekLbl+'</title><style>'+
+    'body{font-family:Arial,sans-serif;font-size:12px;margin:24px;}'+
+    'h2{font-size:16px;margin-bottom:4px;}'+
+    '.sub{color:#666;font-size:11px;margin-bottom:16px;}'+
+    'table{width:100%;border-collapse:collapse;}'+
+    'th{background:#f3f4f6;text-align:left;padding:7px 10px;font-size:11px;border:1px solid #e5e7eb;}'+
+    'td{padding:7px 10px;border:1px solid #e5e7eb;font-size:12px;}'+
+    'tr.ot{background:#fffbeb;}'+
+    '.ot-badge{color:#d97706;font-weight:600;}'+
+    'tfoot td{font-weight:700;background:#f9fafb;}'+
+    '@media print{button{display:none;}}'+
+  '</style></head><body>'+
+  '<h2>Subcontractor Payroll</h2><div class="sub">Week: '+weekLbl+'</div>'+
+  '<table><thead><tr>'+
+    '<th>Name</th><th>Days</th><th>Reg Hrs</th><th>OT Hrs</th><th>Reg Pay</th><th>OT Pay</th><th>Allowance</th><th>Bonus</th><th>Total Pay</th>'+
+  '</tr></thead><tbody>';
+  let totPay=0;
+  rows.forEach(r=>{
+    totPay+=r.total;
+    html+='<tr'+(r.otH>0?' class="ot"':'')+'>'+
+      '<td><strong>'+r.emp.name+'</strong>'+(r.notes?'<br><span style="color:#888;font-size:10px;">'+r.notes+'</span>':'')+'</td>'+
+      '<td>'+r.daysWorked+'d</td>'+
+      '<td>'+fmtH(r.regDisplayH)+'</td>'+
+      '<td>'+(r.otH>0?'<span class="ot-badge">'+fmtH(r.otH)+'</span>':'—')+'</td>'+
+      '<td>PHP '+r.rPay.toFixed(2)+'</td>'+
+      '<td>'+(r.otH>0?'<span class="ot-badge">PHP '+r.oPay.toFixed(2)+'</span>':'—')+'</td>'+
+      '<td>'+(r.allowTotal>0?'PHP '+r.allowTotal.toFixed(2):'—')+'</td>'+
+      '<td>'+(r.bonus>0?'PHP '+r.bonus.toFixed(2):'—')+'</td>'+
+      '<td><strong>PHP '+r.total.toFixed(2)+'</strong></td>'+
+    '</tr>';
+  });
+  html+='</tbody><tfoot><tr><td colspan="8" style="text-align:right;">TOTAL PAYROLL</td><td>PHP '+totPay.toFixed(2)+'</td></tr></tfoot></table>'+
+    '<p style="font-size:10px;color:#888;margin-top:12px;">* OT includes +1hr paid break per OT day &nbsp;|&nbsp; Generated '+new Date().toLocaleString()+'</p>'+
+  '</body></html>';
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(),400);
+}
+
+// ─── Time Log Download / Print ───────────────────────────────────────────────
+function downloadTimelogTxt(){
+  const entries=_lastTimelogEntries;
+  if(!entries||!entries.length){showToast('No entries to download.');return;}
+  const sep='-'.repeat(80);
+  let txt='TIME LOG — '+_lastTimelogLabel+'\n'+sep+'\n';
+  const col=(s,w)=>String(s??'').padEnd(w).slice(0,w);
+  txt+=col('NAME',22)+col('DATE',14)+col('CLOCK IN',12)+col('CLOCK OUT',12)+col('DURATION',12)+col('OT HRS',10)+'\n'+sep+'\n';
+  let totalMs=0, totalOtMs=0;
+  entries.forEach(e=>{
+    const emp=empCache.find(em=>em.id===e.employee_id);
+    const name=emp?emp.name:'Unknown';
+    const ci=phDate(e.clock_in), co=e.clock_out?phDate(e.clock_out):null;
+    const durMs=co?(co-ci):0;
+    const dailyLimitMs=(emp?.daily_hours||8)*3600000;
+    const otMs=co?Math.max(0,durMs-dailyLimitMs):0;
+    totalMs+=durMs; totalOtMs+=otMs;
+    txt+=col(name,22)+col(phtDateFmt(e.clock_in),14)+col(phtTimeFmt(e.clock_in),12)+
+         col(e.clock_out?phtTimeFmt(e.clock_out):'Active',12)+
+         col(co?msToHM(durMs):'—',12)+col(otMs>0?msToHM(otMs):'—',10)+'\n';
+  });
+  txt+=sep+'\n';
+  txt+=col('TOTAL',48)+col(msToHM(totalMs),12)+col(totalOtMs>0?msToHM(totalOtMs):'—',10)+'\n';
+  txt+='\nTotal entries: '+entries.length+'\n';
+  const blob=new Blob([txt],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='timelog-'+_lastTimelogLabel.replace(/[^a-z0-9]/gi,'-').replace(/-+/g,'-')+'.txt';
+  a.click();
+}
+
+function printTimelog(){
+  const entries=_lastTimelogEntries;
+  if(!entries||!entries.length){showToast('No entries to print.');return;}
+  let totalMs=0, totalOtMs=0;
+  let rows='';
+  entries.forEach(e=>{
+    const emp=empCache.find(em=>em.id===e.employee_id);
+    const name=emp?emp.name:'Unknown';
+    const ci=phDate(e.clock_in), co=e.clock_out?phDate(e.clock_out):null;
+    const durMs=co?(co-ci):0;
+    const dailyLimitMs=(emp?.daily_hours||8)*3600000;
+    const otMs=co?Math.max(0,durMs-dailyLimitMs):0;
+    totalMs+=durMs; totalOtMs+=otMs;
+    rows+='<tr>'+
+      '<td><strong>'+name+'</strong></td>'+
+      '<td>'+phtDateFmt(e.clock_in)+'</td>'+
+      '<td>'+phtTimeFmt(e.clock_in)+'</td>'+
+      '<td>'+(e.clock_out?phtTimeFmt(e.clock_out):'<em style="color:#888">Active</em>')+'</td>'+
+      '<td>'+( co?msToHM(durMs):'—')+'</td>'+
+      '<td>'+(otMs>0?'<span style="color:#d97706;font-weight:600;">'+msToHM(otMs)+'</span>':'—')+'</td>'+
+    '</tr>';
+  });
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Time Log — '+_lastTimelogLabel+'</title><style>'+
+    'body{font-family:Arial,sans-serif;font-size:12px;margin:24px;}'+
+    'h2{font-size:16px;margin-bottom:2px;}'+
+    '.sub{color:#666;font-size:11px;margin-bottom:16px;}'+
+    'table{width:100%;border-collapse:collapse;}'+
+    'th{background:#f3f4f6;text-align:left;padding:7px 10px;font-size:11px;border:1px solid #e5e7eb;}'+
+    'td{padding:7px 10px;border:1px solid #e5e7eb;font-size:12px;}'+
+    'tfoot td{font-weight:700;background:#f9fafb;}'+
+    '@media print{button{display:none;}}'+
+  '</style></head><body>'+
+  '<h2>Time Log</h2><div class="sub">'+_lastTimelogLabel+'</div>'+
+  '<table><thead><tr><th>Name</th><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Duration</th><th>OT Hrs</th></tr></thead>'+
+  '<tbody>'+rows+'</tbody>'+
+  '<tfoot><tr>'+
+    '<td colspan="4" style="text-align:right;">TOTAL ('+entries.length+' entries)</td>'+
+    '<td>'+msToHM(totalMs)+'</td>'+
+    '<td>'+(totalOtMs>0?msToHM(totalOtMs):'—')+'</td>'+
+  '</tr></tfoot></table>'+
+  '<p style="font-size:10px;color:#888;margin-top:12px;">Generated '+new Date().toLocaleString()+'</p>'+
+  '</body></html>';
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(),400);
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+const DEFAULT_PW='1234';
+loadLoginDropdown(); // pre-load employee names for login dropdown
+// ─── Payments ────────────────────────────────────────────────────────────────
+let editingPaymentId = null;
+
+async function generateWeekPayables(){
+  const btn = document.getElementById('gen-payables-btn');
+  btn.disabled = true; btn.textContent = 'Generating…';
+  try {
+    const {start, end} = weekRange(0); // always current week
+    const weekStartStr = toDateStr(start);
+    const weekEndStr   = toDateStr(end);
+    // Week number
+    const jan1 = new Date(start.getFullYear(), 0, 1);
+    const wn   = Math.ceil(((start - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+    const weekLabel = 'Week ' + wn;
+
+    const [emps, entries, active, s, adjs, existingPayments] = await Promise.all([
+      GET('/employees'),
+      GET('/entries?start='+weekStartStr+'&end='+weekEndStr),
+      GET('/active'),
+      GET('/settings'),
+      GET('/adjustments?week_start='+weekStartStr),
+      GET('/payments')
+    ]);
+
+    const otMult = parseFloat(s.ot_mult) || 1.5;
+    const adjMap = {};
+    adjs.forEach(a => adjMap[a.employee_id] = a);
+
+    // Include active (open) entries in range
+    const allEntries = [...entries];
+    active.forEach(a => {
+      const ci = new Date(a.clock_in);
+      if (ci >= start && ci <= end && !entries.find(e => e.id === a.entry_id))
+        allEntries.push({id: a.entry_id, employee_id: a.employee_id, clock_in: a.clock_in, clock_out: null});
+    });
+
+    // Find employees already having a payment record for this week
+    const alreadyHave = new Set(
+      existingPayments
+        .filter(p => p.week_start === weekStartStr)
+        .map(p => p.employee_id)
+    );
+
+    let created = 0, skipped = 0;
+    for (const emp of emps) {
+      if (alreadyHave.has(emp.id)) { skipped++; continue; }
+
+      const dailyH   = (emp.daily_hours || 8) * 3600000;
+      const otRate   = emp.hourly_rate || 0;
+      const dailyRate = emp.daily_rate || 0;
+
+      const empEntries = allEntries.filter(e => e.employee_id === emp.id);
+      if (!empEntries.length) { skipped++; continue; } // no work this week
+
+      const dayMap = {};
+      empEntries.forEach(e => {
+        const ci = phDate(e.clock_in);
+        const co = e.clock_out ? phDate(e.clock_out) : new Date();
+        if (co < start || ci > end) return;
+        const day = e.clock_in.slice(0, 10);
+        dayMap[day] = (dayMap[day] || 0) + Math.max(0, Math.min(co, end) - Math.max(ci, start));
+      });
+
+      let actualOtMs = 0, otDays = 0;
+      Object.values(dayMap).forEach(d => {
+        const dayOt = Math.max(0, d - dailyH);
+        if (dayOt > 0) otDays++;
+        actualOtMs += dayOt;
+      });
+      const otMs = actualOtMs + otDays * 3600000;
+      const daysWorked = new Set(empEntries.map(e => e.clock_in.slice(0, 10))).size;
+      const rPay = dailyRate * daysWorked;
+      const otH  = otMs / 3600000;
+      const oPay = otH * otRate * otMult;
+      const allowAmt   = emp.allowance || 0;
+      const allowType  = emp.allowance_type || 'weekly';
+      const allowTotal = (allowAmt > 0 && daysWorked > 0)
+        ? (allowType === 'daily' ? allowAmt * daysWorked : allowAmt) : 0;
+      const bonus = (adjMap[emp.id] || {}).bonus || 0;
+      const total = rPay + oPay + allowTotal + bonus;
+
+      if (total <= 0) { skipped++; continue; }
+
+      await POST('/payments', {
+        employee_id: emp.id,
+        week_label:  weekLabel,
+        week_start:  weekStartStr,
+        week_end:    weekEndStr,
+        amount:      total,
+        status:      'pending',
+        paid_date:   null,
+        notes:       ''
+      });
+      created++;
+    }
+
+    await renderPayments();
+    if (created > 0)
+      showToast('Generated '+created+' payable'+(created>1?'s':'')+' for '+weekLabel+'!');
+    else
+      showToast(skipped+' subcontractor'+(skipped!==1?'s already have':' already has')+' records or no work this week.');
+  } catch(e) { showToast('Error: '+e.message); }
+  finally { btn.disabled = false; btn.textContent = '⚡ Generate This Week\'s Payables'; }
+}
+
+function paymentsInitMonth(){
+  const el = document.getElementById('pay-filter-month');
+  if(!el.value){
+    const now = new Date();
+    el.value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  }
+}
+
+function paymentRow(p, showPaidDate){
+  const emp = empCache.find(e=>e.id===p.employee_id)||{name:'Unknown'};
+  const dateRange = phtDateFmt(p.week_start+'T00:00:00')+' – '+phtDateFmt(p.week_end+'T00:00:00');
+  const notes = p.notes||'<span style="color:var(--gray-300);">—</span>';
+  const actions = '<div style="display:flex;gap:6px;">'+
+    '<button class="btn btn-ghost btn-sm" onclick="openPaymentModal(\''+p.id+'\')">Edit</button>'+
+    (p.status!=='paid'?'<button class="btn btn-ghost btn-sm" style="color:var(--green);font-weight:700;" onclick="quickSetStatus(\''+p.id+'\',\'paid\')">✓ Mark Paid</button>':'<button class="btn btn-ghost btn-sm" style="color:var(--gray-400);" onclick="quickSetStatus(\''+p.id+'\',\'pending\')">Undo</button>')+
+    '<button class="btn btn-danger btn-sm" onclick="confirmDeletePayment(\''+p.id+'\')">Del</button>'+
+  '</div>';
+  if(showPaidDate){
+    const paidDate = p.paid_date ? phtDateFmt(p.paid_date+'T00:00:00') : '—';
+    return '<tr>'+
+      '<td><strong>'+emp.name+'</strong></td>'+
+      '<td>'+(p.week_label||'—')+'</td>'+
+      '<td style="white-space:nowrap;">'+dateRange+'</td>'+
+      '<td><strong style="color:var(--green);">PHP '+p.amount.toFixed(2)+'</strong></td>'+
+      '<td style="color:var(--gray-500);font-size:12px;">'+paidDate+'</td>'+
+      '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+notes+'</td>'+
+      '<td>'+actions+'</td></tr>';
+  }
+  return '<tr>'+
+    '<td><strong>'+emp.name+'</strong></td>'+
+    '<td>'+(p.week_label||'—')+'</td>'+
+    '<td style="white-space:nowrap;">'+dateRange+'</td>'+
+    '<td><strong>PHP '+p.amount.toFixed(2)+'</strong></td>'+
+    '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+notes+'</td>'+
+    '<td>'+actions+'</td></tr>';
+}
+
+async function renderPayments(){
+  paymentsInitMonth();
+  const month = document.getElementById('pay-filter-month').value;
+  const empId = document.getElementById('pay-filter-emp').value;
+
+  // Populate employee dropdowns
+  const sel = document.getElementById('pay-filter-emp');
+  if(sel.options.length<=1) empCache.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name;sel.appendChild(o);});
+  const psel = document.getElementById('pf-emp');
+  if(psel.options.length===0) empCache.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name;psel.appendChild(o);});
+
+  try {
+    // Fetch all pending (no month filter — always show all pending)
+    const pendingQs = empId ? '?employee_id='+empId : '';
+    const allPending = await GET('/payments'+pendingQs);
+    const pending = allPending.filter(p=>p.status==='pending');
+
+    // Fetch paid history filtered by month
+    const histQs = [];
+    if(month) histQs.push('month='+month);
+    if(empId) histQs.push('employee_id='+empId);
+    const allForMonth = await GET('/payments'+(histQs.length?'?'+histQs.join('&'):''));
+    const history = allForMonth.filter(p=>p.status==='paid'||p.status==='released');
+
+    // Stats — use all records for the month for totals
+    const allForStats = await GET('/payments'+(empId?'?employee_id='+empId:''));
+    const isPaid = p=>p.status==='paid'||p.status==='released';
+    const totalPaid    = allForStats.filter(isPaid).reduce((s,p)=>s+p.amount,0);
+    const totalPending = allForStats.filter(p=>p.status==='pending').reduce((s,p)=>s+p.amount,0);
+
+    document.getElementById('payments-stats').innerHTML =
+      sc('Pending','PHP '+totalPending.toFixed(2),pending.length+' unpaid record'+(pending.length!==1?'s':''),'orange')+
+      sc('Paid This Month','PHP '+(allForMonth.filter(isPaid).reduce((s,p)=>s+p.amount,0)).toFixed(2),(month||'all time'),'green')+
+      sc('Total Paid Ever','PHP '+totalPaid.toFixed(2),'All time','purple');
+
+    // Pending table
+    const pendingTbody = document.getElementById('payments-pending-tbody');
+    const pendingEmpty = document.getElementById('payments-pending-empty');
+    if(!pending.length){
+      pendingTbody.innerHTML=''; pendingEmpty.style.display='';
+    } else {
+      pendingEmpty.style.display='none';
+      pendingTbody.innerHTML = pending.map(p=>paymentRow(p, false)).join('');
+    }
+
+    // History table
+    const histTbody = document.getElementById('payments-history-tbody');
+    const histEmpty = document.getElementById('payments-history-empty');
+    if(!history.length){
+      histTbody.innerHTML=''; histEmpty.style.display='';
+    } else {
+      histEmpty.style.display='none';
+      histTbody.innerHTML = history.map(p=>paymentRow(p, true)).join('');
+    }
+  } catch(e){ showToast('Error: '+e.message); }
+}
+
+
+function openPaymentModal(id){
+  editingPaymentId = id;
+  document.getElementById('modal-payment-title').textContent = id ? 'Edit Payment' : 'Record Payment';
+  document.getElementById('pf-err').style.display='none';
+
+  // Populate employee dropdown if needed
+  const psel = document.getElementById('pf-emp');
+  if(psel.options.length===0){
+    empCache.forEach(e=>{
+      const o=document.createElement('option'); o.value=e.id; o.textContent=e.name; psel.appendChild(o);
+    });
+  }
+
+  if(id){
+    GET('/payments').then(all=>{
+      const p = all.find(x=>x.id===id);
+      if(!p) return;
+      psel.value = p.employee_id;
+      document.getElementById('pf-week-label').value = p.week_label||'';
+      document.getElementById('pf-amount').value = p.amount;
+      document.getElementById('pf-week-start').value = p.week_start;
+      document.getElementById('pf-week-end').value = p.week_end;
+      document.getElementById('pf-status').value = p.status||'pending';
+      document.getElementById('pf-paid-date').value = p.paid_date||'';
+      document.getElementById('pf-notes').value = p.notes||'';
+    });
+  } else {
+    // Defaults: current week
+    const today = new Date();
+    const day = today.getDay();
+    const mon = new Date(today); mon.setDate(today.getDate()-(day===0?6:day-1));
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    const fmt = d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    // Week number
+    const start = new Date(today.getFullYear(),0,1);
+    const wn = Math.ceil(((today-start)/86400000+start.getDay()+1)/7);
+    document.getElementById('pf-week-label').value = 'Week '+wn;
+    document.getElementById('pf-week-start').value = fmt(mon);
+    document.getElementById('pf-week-end').value = fmt(sun);
+    document.getElementById('pf-amount').value = '';
+    document.getElementById('pf-status').value = 'pending';
+    document.getElementById('pf-paid-date').value = '';
+    document.getElementById('pf-notes').value = '';
+    if(psel.options.length>0) psel.selectedIndex=0;
+  }
+  openModal('modal-payment');
+  setTimeout(()=>document.getElementById('pf-amount').focus(),150);
+}
+
+async function savePayment(){
+  const empId    = document.getElementById('pf-emp').value;
+  const weekLbl  = document.getElementById('pf-week-label').value.trim();
+  const amount   = parseFloat(document.getElementById('pf-amount').value)||0;
+  const wStart   = document.getElementById('pf-week-start').value;
+  const wEnd     = document.getElementById('pf-week-end').value;
+  const status   = document.getElementById('pf-status').value;
+  const paidDate = document.getElementById('pf-paid-date').value||null;
+  const notes    = document.getElementById('pf-notes').value.trim();
+
+  const errEl = document.getElementById('pf-err');
+  if(!empId || !wStart || !wEnd || amount<=0){
+    errEl.textContent='Please fill in subcontractor, week dates, and a valid amount.';
+    errEl.style.display='block'; return;
+  }
+  errEl.style.display='none';
+
+  const btn=document.getElementById('pf-save-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try {
+    const body={employee_id:empId,week_label:weekLbl,week_start:wStart,week_end:wEnd,amount,status,paid_date:paidDate,notes};
+    if(editingPaymentId) await PUT('/payments/'+editingPaymentId, body);
+    else await POST('/payments', body);
+    closeModal('modal-payment');
+    await renderPayments();
+    showToast(editingPaymentId?'Payment updated!':'Payment recorded!');
+  } catch(e){ showToast('Error: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='Save'; }
+}
+
+async function quickSetStatus(id, status){
+  try {
+    const all = await GET('/payments');
+    const p = all.find(x=>x.id===id);
+    if(!p) return;
+    const today = new Date();
+    const fmt = d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const paid_date = status==='paid' ? (p.paid_date||fmt(today)) : null;
+    await PUT('/payments/'+id, {...p, status, paid_date});
+    await renderPayments();
+    showToast(status==='paid' ? 'Marked as Paid!' : 'Marked as Pending!');
+  } catch(e){ showToast('Error: '+e.message); }
+}
+
+function confirmDeletePayment(id){
+  document.getElementById('confirm-title').textContent='Delete Payment';
+  document.getElementById('confirm-msg').textContent='Delete this payment record? This cannot be undone.';
+  document.getElementById('confirm-ok').onclick=async()=>{
+    try{ await DEL('/payments/'+id); closeModal('modal-confirm'); await renderPayments(); showToast('Payment deleted.'); }
+    catch(e){ showToast('Error: '+e.message); }
+  };
+  openModal('modal-confirm');
+}
+</script>
+</body>
+</html>
