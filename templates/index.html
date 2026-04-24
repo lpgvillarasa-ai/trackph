@@ -1301,7 +1301,7 @@ async function renderPayroll(){
       const bonus=adj.bonus||0;
       const total=rPay+oPay+allowTotal+bonus;
       tPay+=total; tHours+=actualTotalH; tOT+=otH; tBonus+=bonus; tAllowance+=allowTotal;
-      return {emp,actualTotalH,otH,regDisplayH,dailyH:emp.daily_hours||8,otRate,dailyRate,rPay,oPay,allowTotal,allowAmt,allowType,daysWorked,otDays,bonus,notes:adj.notes||'',total,on:activeIds.has(emp.id),weekStart:weekStartStr};
+      return {emp,actualTotalH,otH,regDisplayH,dailyH:emp.daily_hours||8,otRate,dailyRate,rPay,oPay,allowTotal,allowAmt,allowType,daysWorked,bonus,notes:adj.notes||'',total,on:activeIds.has(emp.id),weekStart:weekStartStr};
     });
 
     document.getElementById('payroll-stats').innerHTML=
@@ -1323,7 +1323,7 @@ async function renderPayroll(){
         '<div style="font-size:11px;color:var(--gray-400);">PHP '+r.dailyRate.toFixed(2)+'/day · PHP '+r.otRate.toFixed(2)+'/hr OT · '+r.dailyH+'h/day</div></div></div></td>' +
       '<td>'+(r.on?'<span class="badge badge-green">● Active</span>':'<span class="badge badge-gray">Offline</span>')+'</td>' +
       '<td>'+fmtH(r.regDisplayH)+'<div style="font-size:10px;color:var(--gray-400);">'+r.daysWorked+'d × '+r.dailyH+'h · actual: '+fmtH(r.actualTotalH)+'</div></td>' +
-      '<td>'+(r.otH>0?'<span style="color:var(--orange);font-weight:600;">'+fmtH(r.otH)+'</span>'+(r.otDays>0?'<div style="font-size:10px;color:var(--gray-400);">incl. '+r.otDays+'×1h break</div>':''):'<span style="color:var(--gray-300);">—</span>')+'</td>' +
+      '<td>'+(r.otH>0?'<span style="color:var(--orange);font-weight:600;">'+fmtH(r.otH)+'</span>':'<span style="color:var(--gray-300);">—</span>')+'</td>' +
       '<td>PHP '+r.rPay.toFixed(2)+'<div style="font-size:10px;color:var(--gray-400);">'+r.daysWorked+'d × PHP '+r.dailyRate.toFixed(2)+'</div></td>' +
       '<td>'+(r.otH>0?'<span style="color:var(--orange);">PHP '+r.oPay.toFixed(2)+'</span>':'<span style="color:var(--gray-300);">—</span>')+'</td>' +
       '<td>'+(r.allowTotal>0
