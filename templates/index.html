@@ -1277,15 +1277,14 @@ async function renderPayroll(){
         const day=e.clock_in.slice(0,10);
         dayMap[day]=(dayMap[day]||0)+Math.max(0,Math.min(co,end)-Math.max(ci,start));
       });
-      // OT per day + +1hr paid break per OT day
-      let actualTotalMs=0, actualOtMs=0, otDays=0;
+      // OT per day (raw, no paid break addition)
+      let actualTotalMs=0, actualOtMs=0;
       Object.values(dayMap).forEach(d=>{
         actualTotalMs+=d;
         const dayOt=Math.max(0,d-dailyH);
-        if(dayOt>0) otDays++;
         actualOtMs+=dayOt;
       });
-      const otMs=actualOtMs+otDays*3600000; // include +1hr paid break per OT day
+      const otMs=actualOtMs;
       // Days worked & regular hours: use days_worked × daily_hours (not actual sum)
       const daysWorked=new Set(empEntries.map(e=>e.clock_in.slice(0,10))).size;
       const regDisplayH=daysWorked*(emp.daily_hours||8); // for display
@@ -1710,7 +1709,7 @@ function downloadPayrollTxt(){
   txt+=sep+'\n';
   const totPay=rows.reduce((s,r)=>s+r.total,0);
   txt+=col('TOTAL',54)+col('PHP '+totPay.toFixed(2),12)+'\n';
-  txt+='\n* OT includes +1hr paid break per OT day\n';
+  txt+='\n';
   const blob=new Blob([txt],{type:'text/plain'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -1753,7 +1752,7 @@ function printPayroll(){
     '</tr>';
   });
   html+='</tbody><tfoot><tr><td colspan="8" style="text-align:right;">TOTAL PAYROLL</td><td>PHP '+totPay.toFixed(2)+'</td></tr></tfoot></table>'+
-    '<p style="font-size:10px;color:#888;margin-top:12px;">* OT includes +1hr paid break per OT day &nbsp;|&nbsp; Generated '+new Date().toLocaleString()+'</p>'+
+    '<p style="font-size:10px;color:#888;margin-top:12px;">Generated '+new Date().toLocaleString()+'</p>'+
   '</body></html>';
   const w=window.open('','_blank');
   w.document.write(html);
@@ -1908,13 +1907,11 @@ async function generateWeekPayables(){
         dayMap[day] = (dayMap[day] || 0) + Math.max(0, Math.min(co, end) - Math.max(ci, start));
       });
 
-      let actualOtMs = 0, otDays = 0;
+      let actualOtMs = 0;
       Object.values(dayMap).forEach(d => {
-        const dayOt = Math.max(0, d - dailyH);
-        if (dayOt > 0) otDays++;
-        actualOtMs += dayOt;
+        actualOtMs += Math.max(0, d - dailyH);
       });
-      const otMs = actualOtMs + otDays * 3600000;
+      const otMs = actualOtMs;
       const daysWorked = new Set(empEntries.map(e => e.clock_in.slice(0, 10))).size;
       const rPay = dailyRate * daysWorked;
       const otH  = otMs / 3600000;
