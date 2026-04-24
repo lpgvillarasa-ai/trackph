@@ -1285,25 +1285,23 @@ async function renderPayroll(){
         actualOtMs+=dayOt;
       });
       const otMs=actualOtMs;
-      // Days worked & regular hours: use days_worked × daily_hours (not actual sum)
-      const daysWorked=new Set(empEntries.map(e=>e.clock_in.slice(0,10))).size;
-      // Allowance days: only count days where employee worked >= 1 hour (ignores brief comeback sessions)
-      const allowanceDays=Object.values(dayMap).filter(ms=>ms>=3600000).length;
-      const regDisplayH=daysWorked*(emp.daily_hours||8); // for display
-      const actualTotalH=actualTotalMs/3600000;          // actual hours (gray label)
-      // Pay: daily rate × days for regular; hourly OT rate × OT hours for OT
-      const rPay=dailyRate*daysWorked;
+      // Qualifying days: only count days where total work >= 1 hour (ignores brief comeback sessions)
+      const qualifyingDays=Object.values(dayMap).filter(ms=>ms>=3600000).length;
+      const regDisplayH=qualifyingDays*(emp.daily_hours||8); // for display
+      const actualTotalH=actualTotalMs/3600000;              // actual hours (gray label)
+      // Pay: daily rate × qualifying days; hourly OT rate × OT hours
+      const rPay=dailyRate*qualifyingDays;
       const otH=otMs/3600000;
       const oPay=otH*otRate*otMult;
-      // Allowance — daily uses allowanceDays (≥1h threshold), weekly uses flat rate
+      // Allowance — daily uses qualifyingDays, weekly uses flat rate
       const allowAmt=emp.allowance||0;
       const allowType=emp.allowance_type||'weekly';
-      const allowTotal=(allowAmt>0&&allowanceDays>0)?(allowType==='daily'?allowAmt*allowanceDays:allowAmt):0;
+      const allowTotal=(allowAmt>0&&qualifyingDays>0)?(allowType==='daily'?allowAmt*qualifyingDays:allowAmt):0;
       const adj=adjMap[emp.id]||{bonus:0,notes:''};
       const bonus=adj.bonus||0;
       const total=rPay+oPay+allowTotal+bonus;
       tPay+=total; tHours+=actualTotalH; tOT+=otH; tBonus+=bonus; tAllowance+=allowTotal;
-      return {emp,actualTotalH,otH,regDisplayH,dailyH:emp.daily_hours||8,otRate,dailyRate,rPay,oPay,allowTotal,allowAmt,allowType,daysWorked,allowanceDays,bonus,notes:adj.notes||'',total,on:activeIds.has(emp.id),weekStart:weekStartStr};
+      return {emp,actualTotalH,otH,regDisplayH,dailyH:emp.daily_hours||8,otRate,dailyRate,rPay,oPay,allowTotal,allowAmt,allowType,daysWorked:qualifyingDays,allowanceDays:qualifyingDays,bonus,notes:adj.notes||'',total,on:activeIds.has(emp.id),weekStart:weekStartStr};
     });
 
     document.getElementById('payroll-stats').innerHTML=
@@ -1914,15 +1912,14 @@ async function generateWeekPayables(){
         actualOtMs += Math.max(0, d - dailyH);
       });
       const otMs = actualOtMs;
-      const daysWorked = new Set(empEntries.map(e => e.clock_in.slice(0, 10))).size;
-      const allowanceDays = Object.values(dayMap).filter(ms => ms >= 3600000).length;
-      const rPay = dailyRate * daysWorked;
+      const qualifyingDays = Object.values(dayMap).filter(ms => ms >= 3600000).length;
+      const rPay = dailyRate * qualifyingDays;
       const otH  = otMs / 3600000;
       const oPay = otH * otRate * otMult;
       const allowAmt   = emp.allowance || 0;
       const allowType  = emp.allowance_type || 'weekly';
-      const allowTotal = (allowAmt > 0 && allowanceDays > 0)
-        ? (allowType === 'daily' ? allowAmt * allowanceDays : allowAmt) : 0;
+      const allowTotal = (allowAmt > 0 && qualifyingDays > 0)
+        ? (allowType === 'daily' ? allowAmt * qualifyingDays : allowAmt) : 0;
       const bonus = (adjMap[emp.id] || {}).bonus || 0;
       const total = rPay + oPay + allowTotal + bonus;
 
