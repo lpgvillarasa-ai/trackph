@@ -1204,6 +1204,10 @@ async function doChangePassword(){
 
 // ─── Admin PIN ──────────────────────────────────────────────────────────────
 function goAdminLogin(){
+  if(APP_CFG.google_enabled){ location.href='/auth/google/start?mode=login'; return; }
+  goAdminPinLogin();
+}
+function goAdminPinLogin(){
   pinBuffer=''; updatePinDisplay();
   document.getElementById('pin-error').textContent='';
   showPage('page-admin-login');
@@ -1893,6 +1897,7 @@ async function initApp(){
     document.getElementById('admin-google-btn').style.display='block';
   }
   const qs=new URLSearchParams(location.search);
+  if(qs.has('pin')){ history.replaceState({},'',location.pathname); goAdminPinLogin(); return; }
   const gl=qs.get('glogin');
   if(!gl) return;
   const reason=qs.get('reason');
@@ -1941,9 +1946,12 @@ async function refreshSecuritySettings(){
       : '<div style="font-size:13px;color:var(--gray-400);">Restriction is <b>OFF</b> — anyone with the link can open this site.</div>';
     if(cfg.google_enabled){
       document.getElementById('google-settings-card').style.display='block';
-      document.getElementById('admin-google-status').innerHTML=cfg.admin_google_email
-        ? 'Connected: <b>'+cfg.admin_google_email+'</b>'
-        : 'Not connected.';
+      let html='';
+      if((cfg.admin_emails||[]).length) html+='Built-in admin: <b>'+cfg.admin_emails.join('</b>, <b>')+'</b><br>';
+      html+=cfg.admin_google_email
+        ? 'Extra connected admin: <b>'+cfg.admin_google_email+'</b>'
+        : 'No extra admin account connected.';
+      document.getElementById('admin-google-status').innerHTML=html;
     }
   }catch(e){}
 }

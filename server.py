@@ -16,6 +16,11 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '').strip()
 
+# Google accounts that are always admins (comma-separated in ADMIN_EMAILS env)
+ADMIN_EMAILS = {e.strip().lower() for e in
+                os.environ.get('ADMIN_EMAILS', 'lpg.villarasa@gmail.com').split(',')
+                if e.strip()}
+
 # ── Database ──────────────────────────────────────────────────────────────
 def get_db():
     return Db()
@@ -321,7 +326,7 @@ def google_callback():
 
     # mode == 'login'
     admin_email = get_setting(c, 'admin_google_email').lower()
-    if admin_email and email == admin_email:
+    if email in ADMIN_EMAILS or (admin_email and email == admin_email):
         c.close()
         keep_bypass = session.get('ip_bypass')
         session.clear()
@@ -355,6 +360,7 @@ def app_config():
         'role': role,
         'my_ip': client_ip(),
         'admin_google_email': admin_google,
+        'admin_emails': sorted(ADMIN_EMAILS) if is_admin() else [],
     })
 
 # ── Auth ───────────────────────────────────────────────────────────────────

@@ -29,6 +29,7 @@ Tables are created automatically on first request — no migrations to run.
 | `GOOGLE_CLIENT_ID` | for Google login | From Google Cloud Console |
 | `GOOGLE_CLIENT_SECRET` | for Google login | From Google Cloud Console |
 | `ALLOWED_IPS` | optional | Extra comma-separated always-allowed IPs (in addition to the ones managed in Admin → Settings) |
+| `ADMIN_EMAILS` | optional | Comma-separated Google emails that are always admins (default: lpg.villarasa@gmail.com). Signing in with Google as one of these goes straight to the admin dashboard — no PIN. |
 
 Generate a secret key with: `python -c "import secrets; print(secrets.token_hex(32))"`
 
