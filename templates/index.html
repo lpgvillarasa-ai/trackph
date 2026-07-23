@@ -2025,7 +2025,14 @@ async function initApp(){
   const qs=new URLSearchParams(location.search);
   if(qs.has('pin')){ history.replaceState({},'',location.pathname); goAdminPinLogin(); return; }
   const gl=qs.get('glogin');
-  if(!gl) return;
+  if(!gl){
+    // No redirect params — restore an existing session so refresh keeps you signed in
+    try{
+      if(APP_CFG.role==='admin'){ await loadAdminData(); showPage('page-admin'); }
+      else if(APP_CFG.role==='employee'){ currentEmp=await GET('/me'); showPage('page-employee'); renderEmployeeDashboard(); }
+    }catch(e){}
+    return;
+  }
   const reason=qs.get('reason');
   history.replaceState({},'',location.pathname);
   const reasons={
@@ -2062,6 +2069,23 @@ async function initApp(){
     }catch(e){ showToast('Error: '+e.message); }
   }
 }
+
+// Watch for the 1-hour inactivity logout: if the session expired server-side,
+// send the user back to the sign-in screen (the /config poll doesn't count as activity)
+setInterval(async()=>{
+  const onDash=document.getElementById('page-employee').classList.contains('active')
+            ||document.getElementById('page-admin').classList.contains('active');
+  if(!onDash) return;
+  try{
+    const cfg=await GET('/config');
+    if(!cfg.role){
+      clearInterval(timerInterval); clearInterval(statsInterval);
+      currentEmp=null;
+      showPage('page-home');
+      showToast('You were signed out after 1 hour of inactivity.',5000);
+    }
+  }catch(e){}
+},60000);
 
 // ─── Security settings (IP lock + Google) ────────────────────────────────────
 async function refreshSecuritySettings(){

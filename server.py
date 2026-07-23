@@ -12,6 +12,23 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'timetrack-local-secret-2024')
 app.config['TEMPLATES_AUTO_RELOAD'] = True        # always serve latest template
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.permanent_session_lifetime = timedelta(days=7)   # cookie survives refresh/browser restart
+
+# Log out after this much inactivity (server-enforced)
+SESSION_IDLE_SECONDS = int(os.environ.get('SESSION_IDLE_SECONDS', '3600'))
+# These endpoints are background polls — they don't count as user activity
+PASSIVE_PATHS = {'/api/config', '/api/server-time', '/api/ip-status'}
+
+def start_session(**kwargs):
+    """Fresh logged-in session that survives refreshes; keeps the IP bypass flag."""
+    keep_bypass = session.get('ip_bypass')
+    session.clear()
+    session.permanent = True
+    if keep_bypass:
+        session['ip_bypass'] = True
+    session['last_seen'] = int(time.time())
+    for k, v in kwargs.items():
+        session[k] = v
 
 GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '').strip()
@@ -175,6 +192,17 @@ def gate():
             return jsonify({'error': 'Database not configured yet'}), 503
         return None
     ensure_db()
+    # Inactivity logout: expire logged-in sessions idle longer than the limit
+    if session.get('emp_id') or session.get('is_admin'):
+        now  = int(time.time())
+        last = session.get('last_seen', now)
+        if now - last > SESSION_IDLE_SECONDS:
+            keep_bypass = session.get('ip_bypass')
+            session.clear()
+            if keep_bypass:
+                session['ip_bypass'] = True
+        elif request.path not in PASSIVE_PATHS:
+            session['last_seen'] = now
     if request.path in IP_EXEMPT_PATHS:
         return None
     ips = allowed_ips()
@@ -208,6 +236,7 @@ def ip_unlock():
         c.close()
         time.sleep(0.8)               # slow down PIN guessing
         return jsonify({'error': 'Incorrect PIN'}), 401
+    session.permanent = True
     session['ip_bypass'] = True
     if d.get('remember'):
         ips = [i.strip() for i in get_setting(c, 'allowed_ips').split(',') if i.strip()]
@@ -329,11 +358,7 @@ def google_callback():
     # mode == 'login' — admin is strictly limited to ADMIN_EMAILS
     if email in ADMIN_EMAILS:
         c.close()
-        keep_bypass = session.get('ip_bypass')
-        session.clear()
-        session['is_admin'] = True
-        if keep_bypass:
-            session['ip_bypass'] = True
+        start_session(is_admin=True)
         return redirect('/?glogin=admin')
     emp = c.execute('SELECT * FROM employees WHERE lower(google_email)=?', (email,)).fetchone()
     c.close()
@@ -341,12 +366,7 @@ def google_callback():
         # New Google account → start self-onboarding (name + birth year)
         session['pending_google'] = email
         return redirect('/?glogin=new&name=' + urllib.parse.quote(info.get('name', '')))
-    keep_bypass = session.get('ip_bypass')
-    session.clear()
-    session['emp_id']   = emp['id']
-    session['is_admin'] = (emp['role'] == 'admin')   # role granted by the master admin
-    if keep_bypass:
-        session['ip_bypass'] = True
+    start_session(emp_id=emp['id'], is_admin=(emp['role'] == 'admin'))
     return redirect('/?glogin=admin' if session['is_admin'] else '/?glogin=emp')
 
 @app.route('/api/employees/<eid>/role', methods=['PUT'])
@@ -393,12 +413,7 @@ def google_signup():
     c.commit()
     emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year FROM employees WHERE id=?', (eid,)).fetchone()
     c.close()
-    keep_bypass = session.get('ip_bypass')
-    session.clear()
-    if keep_bypass:
-        session['ip_bypass'] = True
-    session['emp_id']   = eid
-    session['is_admin'] = False
+    start_session(emp_id=eid, is_admin=False)
     return jsonify(dict(emp)), 201
 
 @app.route('/api/merge-employees', methods=['POST'])
@@ -464,12 +479,7 @@ def employee_login():
     if not check_password(emp, password):
         return jsonify({'error': 'Incorrect password'}), 401
 
-    keep_bypass = session.get('ip_bypass')
-    session.clear()
-    if keep_bypass:
-        session['ip_bypass'] = True
-    session['emp_id']   = emp['id']
-    session['is_admin'] = False
+    start_session(emp_id=emp['id'], is_admin=False)
     return jsonify({'id': emp['id'], 'name': emp['name'], 'regular_hours': emp['regular_hours'], 'daily_hours': emp['daily_hours'], 'allowance': emp['allowance'], 'allowance_type': emp['allowance_type'], 'google_email': emp['google_email']})
 
 @app.route('/api/employee-logout', methods=['POST'])
@@ -951,11 +961,7 @@ def admin_login():
     stored_pin = row['value'] if row else '1234'
     if pin != stored_pin:
         return jsonify({'error': 'Incorrect PIN'}), 401
-    keep_bypass = session.get('ip_bypass')
-    session.clear()
-    if keep_bypass:
-        session['ip_bypass'] = True
-    session['is_admin'] = True
+    start_session(is_admin=True)
     return jsonify({'ok': True})
 
 @app.route('/api/admin-logout', methods=['POST'])
