@@ -3,37 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TrackPH — Team Time Tracker</title>
+<title>TrackPH · Anchored Grace Innovations</title>
+<meta name="theme-color" content="#12232E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%23C4A05A'/%3E%3Ctext%20x='32'%20y='35'%20font-family='Archivo,Arial,sans-serif'%20font-size='22'%20font-weight='800'%20fill='%2312232E'%20text-anchor='middle'%20dominant-baseline='central'%20letter-spacing='0.5'%3EAGI%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --primary:#2563eb; --primary-dark:#1d4ed8; --primary-light:#eff6ff;
-    --green:#10b981;   --green-dark:#059669;   --green-light:#ecfdf5;
-    --red:#ef4444;     --red-dark:#dc2626;
-    --orange:#f59e0b;  --orange-light:#fffbeb;
-    --purple:#7c3aed;
-    --gray-50:#f8fafc; --gray-100:#f1f5f9; --gray-200:#e2e8f0;
-    --gray-300:#cbd5e1; --gray-400:#94a3b8; --gray-500:#64748b;
-    --gray-600:#475569; --gray-700:#334155; --gray-800:#1e293b; --gray-900:#0f172a;
-    --white:#ffffff;
-    --shadow-sm:0 1px 2px rgba(0,0,0,.05);
-    --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
-    --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.05);
-    --shadow-lg:0 10px 25px rgba(0,0,0,.1),0 4px 10px rgba(0,0,0,.05);
-    --shadow-xl:0 20px 40px rgba(0,0,0,.12),0 8px 16px rgba(0,0,0,.06);
-    --r:12px; --rs:8px; --r-lg:16px;
+    /* AGI — Anchored Grace Innovations brand system */
+    --ink:#12232E;      --ink-soft:#1C3140;   --gold:#C4A05A;   --gold-deep:#A8863F;
+    --cream:#F5F1E8;    --paper:#FBF7F1;
+    --primary:#A8863F;  --primary-dark:#8A6D33; --primary-light:#F3EAD5;
+    --green:#2E7D5B;    --green-dark:#256849;   --green-light:#E9F1EB;
+    --red:#B85C3D;      --red-dark:#9C4A2F;
+    --orange:#C08A2E;   --orange-light:#F8EFDC;
+    --purple:#33454F;
+    --gray-50:#FAF6EE;  --gray-100:#F3EDE0; --gray-200:#E6DDCA;
+    --gray-300:#CFC4AC; --gray-400:#9C9280; --gray-500:#6E6455;
+    --gray-600:#564E40; --gray-700:#3E382E; --gray-800:#26211D; --gray-900:#12232E;
+    --white:#FFFDF8;
+    --shadow-sm:0 1px 2px rgba(38,33,29,.06);
+    --shadow:0 1px 3px rgba(38,33,29,.09),0 1px 2px rgba(38,33,29,.05);
+    --shadow-md:0 4px 8px rgba(38,33,29,.08),0 2px 4px rgba(38,33,29,.05);
+    --shadow-lg:0 12px 28px rgba(38,33,29,.12),0 4px 10px rgba(38,33,29,.06);
+    --shadow-xl:0 24px 48px rgba(18,35,46,.16),0 8px 16px rgba(18,35,46,.08);
+    --shadow-gold:0 2px 10px rgba(196,160,90,.35);
+    --r:14px; --rs:9px; --r-lg:18px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--gray-50);color:var(--gray-800);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;}
+  ::selection{background:rgba(196,160,90,.35);}
+  body{font-family:'Archivo',system-ui,-apple-system,sans-serif;background:var(--gray-50);background-image:radial-gradient(ellipse 90% 50% at 50% -10%,rgba(196,160,90,.07),transparent 60%);color:var(--gray-800);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;}
   .page{display:none;min-height:100vh;}
   .page.active{display:flex;flex-direction:column;}
 
-  /* ── Topbar ── */
-  .topbar{background:var(--white);border-bottom:1px solid var(--gray-200);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);}
-  .topbar-logo{font-weight:800;font-size:17px;color:var(--gray-900);letter-spacing:-.4px;display:flex;align-items:center;gap:8px;}
-  .topbar-logo-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);display:inline-block;}
-  .topbar-badge{background:var(--primary-light);color:var(--primary);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;}
+  /* ── Topbar — ink navy with gold accents ── */
+  .topbar{background:var(--ink);border-bottom:1px solid rgba(196,160,90,.35);padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(18,35,46,.25);}
+  .topbar-logo{font-weight:800;font-size:17px;color:var(--cream);letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+  .topbar-logo-dot{width:22px;height:22px;border-radius:6px;background:linear-gradient(145deg,#D4B472,var(--gold-deep));display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:900;color:var(--ink);letter-spacing:.3px;}
+  .topbar-logo-dot::after{content:'AGI';}
+  .topbar-badge{background:rgba(196,160,90,.18);color:var(--gold);font-size:11px;padding:2px 9px;border-radius:20px;font-weight:700;letter-spacing:.4px;border:1px solid rgba(196,160,90,.3);}
+  .topbar span[id="topbar-emp-name"]{color:rgba(245,241,232,.75)!important;}
+  .topbar .btn-ghost{color:rgba(245,241,232,.85);border-color:rgba(245,241,232,.22);background:transparent;}
+  .topbar .btn-ghost:hover:not(:disabled){background:rgba(245,241,232,.1);border-color:rgba(196,160,90,.6);color:var(--cream);}
 
   /* ── Layout ── */
   .content{flex:1;padding:28px;max-width:980px;margin:0 auto;width:100%;}
@@ -42,31 +54,32 @@
   /* ── Cards ── */
   .card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);margin-bottom:16px;}
   .card:last-child{margin-bottom:0;}
-  .card-title{font-weight:700;font-size:15px;margin-bottom:16px;color:var(--gray-900);}
+  .card-title{font-weight:800;font-size:15px;margin-bottom:16px;color:var(--ink);letter-spacing:-.2px;}
+  .card-title::after{content:'';display:block;width:28px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--gold),rgba(196,160,90,.25));margin-top:6px;}
 
   /* ── Buttons ── */
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 18px;border-radius:var(--rs);font-size:13.5px;font-weight:600;cursor:pointer;border:none;transition:background .15s,box-shadow .15s,transform .12s,border-color .15s,opacity .15s;white-space:nowrap;letter-spacing:-.1px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .btn:active:not(:disabled){transform:scale(.97);}
   .btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
-  .btn-primary{background:var(--primary);color:var(--white);box-shadow:0 1px 2px rgba(37,99,235,.3);}
-  .btn-primary:hover:not(:disabled){background:var(--primary-dark);box-shadow:0 2px 8px rgba(37,99,235,.4);}
-  .btn-green{background:var(--green);color:var(--white);font-size:16px;padding:14px 40px;border-radius:10px;box-shadow:0 2px 8px rgba(16,185,129,.3);}
-  .btn-green:hover:not(:disabled){background:var(--green-dark);box-shadow:0 4px 12px rgba(16,185,129,.4);}
-  .btn-red{background:var(--red);color:var(--white);font-size:16px;padding:14px 40px;border-radius:10px;}
-  .btn-red:hover:not(:disabled){background:var(--red-dark);}
+  .btn-primary{background:linear-gradient(180deg,#D0AE66,var(--gold-deep));color:var(--ink);font-weight:800;box-shadow:var(--shadow-gold);}
+  .btn-primary:hover:not(:disabled){background:linear-gradient(180deg,#DBB971,#B29147);box-shadow:0 4px 16px rgba(196,160,90,.5);}
+  .btn-green{background:linear-gradient(180deg,#37906A,var(--green-dark));color:#F5FBF7;font-size:16px;padding:14px 40px;border-radius:11px;box-shadow:0 2px 10px rgba(46,125,91,.35);letter-spacing:.2px;}
+  .btn-green:hover:not(:disabled){background:linear-gradient(180deg,#3E9C74,#2B7554);box-shadow:0 4px 14px rgba(46,125,91,.45);}
+  .btn-red{background:linear-gradient(180deg,#C66A48,var(--red-dark));color:#FBF3EF;font-size:16px;padding:14px 40px;border-radius:11px;box-shadow:0 2px 10px rgba(184,92,61,.35);}
+  .btn-red:hover:not(:disabled){background:linear-gradient(180deg,#CE7351,#8E4229);}
   .btn-ghost{background:transparent;color:var(--gray-600);border:1.5px solid var(--gray-200);}
-  .btn-ghost:hover:not(:disabled){background:var(--gray-50);border-color:var(--gray-300);color:var(--gray-700);}
-  .btn-danger{background:transparent;color:var(--red);border:1.5px solid #fecaca;}
-  .btn-danger:hover:not(:disabled){background:#fff5f5;border-color:var(--red);}
+  .btn-ghost:hover:not(:disabled){background:var(--primary-light);border-color:var(--gold);color:var(--gray-800);}
+  .btn-danger{background:transparent;color:var(--red);border:1.5px solid #E9C9BB;}
+  .btn-danger:hover:not(:disabled){background:#F9EFEA;border-color:var(--red);}
   .btn-sm{padding:5px 11px;font-size:12px;}
   .btn-full{width:100%;}
 
   /* ── Forms ── */
   label{display:block;font-weight:600;color:var(--gray-700);margin-bottom:5px;font-size:12.5px;letter-spacing:.1px;}
   input,select{width:100%;padding:9px 13px;border:1.5px solid var(--gray-200);border-radius:var(--rs);font-size:14px;color:var(--gray-800);outline:none;background:var(--white);transition:border-color .15s,box-shadow .15s;font-family:inherit;touch-action:manipulation;}
-  input:focus-visible,select:focus-visible,input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1);outline:none;}
-  input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.1);}
+  input:focus-visible,select:focus-visible,input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(196,160,90,.18);outline:none;}
+  input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(184,92,61,.12);}
   .form-group{margin-bottom:14px;}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   .ferr{color:var(--red);font-size:12px;margin-top:4px;display:none;}
@@ -101,7 +114,7 @@
   /* ── Tabs ── */
   .tabs{display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:24px;}
   .tab-btn{padding:10px 20px;font-size:13.5px;font-weight:600;color:var(--gray-400);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;letter-spacing:-.1px;}
-  .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);background:var(--primary-light);border-radius:8px 8px 0 0;}
+  .tab-btn.active{color:var(--primary-dark);border-bottom-color:var(--gold);background:var(--primary-light);border-radius:8px 8px 0 0;}
   .tab-btn:hover:not(.active){color:var(--gray-700);background:var(--gray-50);border-radius:8px 8px 0 0;}
   .tab-pane{display:none;}
   .tab-pane.active{display:block;}
@@ -114,28 +127,32 @@
   .modal-title{font-size:18px;font-weight:800;margin-bottom:18px;color:var(--gray-900);letter-spacing:-.3px;}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;}
 
-  /* ── Home ── */
-  #page-home{background:linear-gradient(160deg,#0f172a 0%,#1e3a8a 50%,#2563eb 100%);align-items:center;justify-content:center;position:relative;overflow:hidden;}
-  #page-home::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(96,165,250,.15) 0%,transparent 70%);pointer-events:none;}
-  #page-home::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;}
-  .home-inner{text-align:center;padding:40px 24px;position:relative;z-index:1;}
-  .home-logo-ring{width:72px;height:72px;border-radius:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px;backdrop-filter:blur(10px);}
-  .home-title{font-size:40px;font-weight:800;color:var(--white);margin-bottom:6px;letter-spacing:-1.5px;}
-  .home-tagline{font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(147,197,253,.8);margin-bottom:10px;}
-  .home-sub{color:rgba(191,219,254,.8);font-size:16px;margin-bottom:52px;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.6;}
+  /* ── Home — AGI ink & gold hero ── */
+  #page-home{background:linear-gradient(168deg,#0C1820 0%,var(--ink) 45%,#1A3244 100%);align-items:center;justify-content:center;position:relative;overflow:hidden;}
+  #page-home::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 30%,rgba(196,160,90,.14) 0%,transparent 65%),radial-gradient(ellipse 40% 30% at 85% 85%,rgba(196,160,90,.08) 0%,transparent 70%);pointer-events:none;}
+  #page-home::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(245,241,232,.05) 1px,transparent 1px);background-size:34px 34px;pointer-events:none;}
+  .home-inner{text-align:center;padding:40px 24px;position:relative;z-index:1;animation:homeIn .7s cubic-bezier(.22,1,.36,1);}
+  @keyframes homeIn{from{opacity:0;transform:translateY(18px);}}
+  .home-logo-ring{width:84px;height:84px;border-radius:22px;background:linear-gradient(145deg,#D8B876 0%,var(--gold) 45%,var(--gold-deep) 100%);border:1px solid rgba(245,241,232,.25);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;letter-spacing:1px;color:var(--ink);margin:0 auto 22px;box-shadow:0 12px 32px rgba(196,160,90,.35),inset 0 1px 0 rgba(255,255,255,.4);}
+  .home-title{font-size:42px;font-weight:900;color:var(--cream);margin-bottom:6px;letter-spacing:-1.2px;}
+  .home-tagline{font-size:11.5px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+  .home-sub{color:rgba(245,241,232,.6);font-size:15.5px;margin-bottom:48px;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.65;}
   .home-cards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
-  .home-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:30px 40px;cursor:pointer;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s;text-align:center;color:var(--white);min-width:190px;backdrop-filter:blur(12px);font-family:inherit;}
-  .home-card:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.3);}
+  .home-card{background:rgba(245,241,232,.06);border:1px solid rgba(196,160,90,.25);border-radius:18px;padding:30px 40px;cursor:pointer;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s;text-align:center;color:var(--cream);min-width:190px;backdrop-filter:blur(12px);font-family:inherit;}
+  .home-card:hover{background:rgba(196,160,90,.12);border-color:rgba(196,160,90,.6);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.35);}
   .home-card:active{transform:translateY(-1px);}
   .home-card-icon{font-size:38px;margin-bottom:12px;display:block;}
-  .home-card-label{font-size:17px;font-weight:700;letter-spacing:-.3px;}
-  .home-card-desc{font-size:12.5px;color:rgba(191,219,254,.7);margin-top:5px;}
-  .home-features{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:40px;}
-  .home-feature{color:rgba(191,219,254,.65);font-size:12px;display:flex;align-items:center;gap:6px;}
-  .home-feature::before{content:'✓';color:rgba(52,211,153,.8);font-weight:700;}
+  .home-card-label{font-size:17px;font-weight:800;letter-spacing:-.2px;}
+  .home-card-desc{font-size:12.5px;color:rgba(245,241,232,.55);margin-top:5px;}
+  .home-features{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:42px;}
+  .home-feature{color:rgba(245,241,232,.5);font-size:12px;display:flex;align-items:center;gap:6px;letter-spacing:.2px;}
+  .home-feature::before{content:'✓';color:var(--gold);font-weight:800;}
+  #home-signin .btn-ghost{color:rgba(245,241,232,.7);border-color:rgba(245,241,232,.22);}
+  #home-signin .btn-ghost:hover:not(:disabled){background:rgba(245,241,232,.08);border-color:rgba(196,160,90,.55);color:var(--cream);}
 
   /* ── Login ── */
   .login-box{width:100%;max-width:390px;margin:0 auto;}
+  .login-box .card{border-top:3px solid var(--gold);box-shadow:var(--shadow-lg);}
   .login-icon{font-size:44px;text-align:center;margin-bottom:10px;}
   .login-title{font-size:24px;font-weight:800;text-align:center;margin-bottom:4px;color:var(--gray-900);letter-spacing:-.5px;}
   .login-sub{font-size:13px;color:var(--gray-500);text-align:center;margin-bottom:24px;}
@@ -145,7 +162,8 @@
   .emp-header-av{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--white);flex-shrink:0;}
 
   .timer-card{text-align:center;padding:36px 20px;}
-  .timer-display{font-size:60px;font-weight:800;color:var(--gray-800);letter-spacing:-3px;font-variant-numeric:tabular-nums;margin-bottom:8px;}
+  .timer-card{background:linear-gradient(180deg,var(--white) 0%,#FBF6EC 100%);border-color:var(--gray-200);}
+  .timer-display{font-size:60px;font-weight:900;color:var(--ink);letter-spacing:-2px;font-variant-numeric:tabular-nums;margin-bottom:8px;}
   .timer-display.running{color:var(--green);}
   .timer-display.on-break{color:var(--orange);}
   .timer-label{font-size:13px;color:var(--gray-400);margin-bottom:28px;font-weight:500;}
@@ -162,11 +180,11 @@
 
   .day-entry{border:1.5px solid var(--gray-200);border-radius:var(--rs);margin-bottom:8px;overflow:hidden;}
   .day-entry:last-child{margin-bottom:0;}
-  .day-entry.today{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+  .day-entry.today{border-color:var(--gold);box-shadow:0 0 0 3px rgba(196,160,90,.15);}
   .day-entry-header{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--gray-50);cursor:pointer;user-select:none;}
   .day-entry.today .day-entry-header{background:var(--primary-light);}
   .day-entry-header:hover{background:var(--gray-100);}
-  .day-entry.today .day-entry-header:hover{background:#dbeafe;}
+  .day-entry.today .day-entry-header:hover{background:#EFE3C8;}
   .day-label{font-size:13px;font-weight:700;color:var(--gray-700);}
   .day-entry.today .day-label{color:var(--primary);}
   .day-total{font-size:13px;font-weight:700;color:var(--gray-700);}
@@ -189,7 +207,7 @@
   /* ── PIN ── */
   .pin-display{display:flex;gap:12px;justify-content:center;margin:28px 0 18px;}
   .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--gray-300);transition:all .15s;}
-  .pin-dot.filled{background:var(--primary);border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.2);}
+  .pin-dot.filled{background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 3px rgba(196,160,90,.25);}
   .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto;}
   .pin-key{padding:14px;border-radius:10px;border:1.5px solid var(--gray-200);background:var(--white);font-size:18px;font-weight:700;cursor:pointer;text-align:center;transition:all .12s;user-select:none;color:var(--gray-800);}
   .pin-key:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary);}
@@ -239,10 +257,10 @@
 <!-- HOME -->
 <div id="page-home" class="page active">
   <div class="home-inner">
-    <div class="home-logo-ring">⏱</div>
-    <div class="home-tagline">Team Time Tracker</div>
+    <div class="home-logo-ring">AGI</div>
+    <div class="home-tagline">Anchored Grace Innovations</div>
     <div class="home-title">TrackPH</div>
-    <div class="home-sub">Payroll-ready time tracking for local teams — runs on your own network, no subscription needed.</div>
+    <div class="home-sub">Time tracking &amp; payroll for the AGI team — clock in, log your hours, get paid right.</div>
     <div class="home-cards" id="home-cards">
       <button class="home-card" onclick="showPage('page-emp-login')" aria-label="Subcontractor login — clock in and out">
         <span class="home-card-icon" aria-hidden="true">👤</span>
@@ -259,14 +277,14 @@
       <button class="btn btn-full" style="background:#fff;border:1px solid var(--gray-300);color:var(--gray-700);font-weight:700;padding:14px;font-size:15px;box-shadow:var(--shadow);" onclick="location.href='/auth/google/start?mode=login'">
         <svg width="20" height="20" viewBox="0 0 48 48" style="margin-right:10px;vertical-align:-4px;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Sign in with Google
       </button>
-      <div style="font-size:12px;color:var(--gray-400);margin-top:10px;">New here? Signing in creates your account automatically.</div>
+      <div style="font-size:12px;color:rgba(245,241,232,.55);margin-top:10px;">New here? Signing in creates your account automatically.</div>
       <button class="btn btn-ghost btn-sm btn-full" style="margin-top:14px;" onclick="showPage('page-emp-login')">Use password instead</button>
     </div>
     <div class="home-features">
       <span class="home-feature">Automatic OT calculation</span>
       <span class="home-feature">Philippine Peso &amp; Time</span>
       <span class="home-feature">Weekly payroll reports</span>
-      <span class="home-feature">Works offline on LAN</span>
+      <span class="home-feature">Secure Google sign-in</span>
     </div>
   </div>
 </div>
@@ -293,7 +311,7 @@
         <div id="login-pw-err" class="ferr"></div>
       </div>
       <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px;">
-        Default password is <strong>1234</strong> — ask admin if you don't know yours.
+        Don't know your password? Ask your admin — or use Google below if your account is linked.
       </div>
       <button id="login-btn" class="btn btn-primary btn-full" onclick="doEmpLogin()">Log In</button>
       <div id="google-login-wrap" style="display:none;">
@@ -722,8 +740,10 @@
   <div class="modal">
     <div class="modal-title">🔑 Change Password</div>
     <div class="form-group">
+      <span id="cpw-cur-wrap">
       <label for="cpw-cur">Current Password</label>
       <input type="password" id="cpw-cur" name="current-password" autocomplete="current-password" placeholder="Current password…" />
+      </span>
     </div>
     <div class="form-group">
       <label for="cpw-new">New Password</label>
@@ -882,7 +902,7 @@ function calcMs(entries, empId, start, end){
   },0);
 }
 
-const COLORS=['#2563eb','#7c3aed','#db2777','#059669','#d97706','#dc2626','#0891b2','#65a30d'];
+const COLORS=['#A8863F','#33454F','#B85C3D','#2E7D5B','#5B625B','#7A5A44','#456A7A','#8A6D33'];
 function avatarColor(name){let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))%COLORS.length;return COLORS[Math.abs(h)];}
 function initials(name){return name.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);}
 function avDiv(name,size){
@@ -1274,11 +1294,16 @@ async function confirmClockOut(){
 }
 
 // ─── Change own password ────────────────────────────────────────────────────
+function needsCurrentPw(){
+  // Google-created accounts have an auto-generated password the user never saw
+  return !(currentEmp && (currentEmp.password_set===0||currentEmp.password_set===false));
+}
 function openChangePasswordModal(){
   document.getElementById('cpw-cur').value='';
   document.getElementById('cpw-new').value='';
   document.getElementById('cpw-cfm').value='';
   document.getElementById('cpw-err').classList.remove('show');
+  document.getElementById('cpw-cur-wrap').style.display=needsCurrentPw()?'':'none';
   openModal('modal-change-pw');
 }
 
@@ -1289,7 +1314,7 @@ async function doChangePassword(){
   const err=document.getElementById('cpw-err');
   err.classList.remove('show');
 
-  if(!cur||!nw)         {err.textContent='Please fill in all fields.'; err.classList.add('show'); return;}
+  if((needsCurrentPw()&&!cur)||!nw){err.textContent='Please fill in all fields.'; err.classList.add('show'); return;}
   if(nw!==cf)           {err.textContent='Passwords do not match.';    err.classList.add('show'); return;}
   if(nw.length<3)       {err.textContent='Password must be at least 3 characters.'; err.classList.add('show'); return;}
 
@@ -1297,6 +1322,7 @@ async function doChangePassword(){
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try {
     await POST('/change-password',{current:cur,new:nw});
+    if(currentEmp) currentEmp.password_set=1;
     closeModal('modal-change-pw');
     showToast('Password updated successfully!');
   } catch(e){ err.textContent=e.message; err.classList.add('show'); }

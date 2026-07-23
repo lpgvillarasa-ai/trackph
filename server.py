@@ -108,6 +108,7 @@ def init_db():
         ('google_email',    'TEXT'),
         ('birth_year',      'INTEGER'),
         ('role',            "TEXT NOT NULL DEFAULT 'subcontractor'"),
+        ('password_set',    'INTEGER NOT NULL DEFAULT 1'),   # 0 = auto-generated, never chosen by the user
     ]:
         try:
             c.execute(f'ALTER TABLE employees ADD COLUMN {col} {definition}')
@@ -261,15 +262,17 @@ def blocked_page():
 
 BLOCKED_PAGE = '''<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TrackPH — Access Restricted</title>
-<style>body{font-family:system-ui,sans-serif;background:#f8fafc;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}
-.card{background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:36px 28px;max-width:380px;width:100%;text-align:center}
-h1{font-size:20px;margin:12px 0 6px}p{color:#64748b;font-size:14px;line-height:1.5}
-input{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;text-align:center;letter-spacing:6px;box-sizing:border-box;margin:10px 0}
-button{width:100%;padding:11px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
-label{display:flex;gap:8px;align-items:center;justify-content:center;font-size:13px;color:#64748b;margin:10px 0}
-#err{color:#dc2626;font-size:13px;min-height:18px;margin-top:8px}</style></head><body>
-<div class="card"><div style="font-size:40px">🔒</div><h1>Access Restricted</h1>
+<title>TrackPH · AGI — Access Restricted</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%23C4A05A'/%3E%3Ctext%20x='32'%20y='35'%20font-family='Arial,sans-serif'%20font-size='22'%20font-weight='800'%20fill='%2312232E'%20text-anchor='middle'%20dominant-baseline='central'%3EAGI%3C/text%3E%3C/svg%3E">
+<style>body{font-family:'Archivo',system-ui,sans-serif;background:linear-gradient(168deg,#0C1820,#12232E 45%,#1A3244);display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}
+.card{background:#FFFDF8;border-top:3px solid #C4A05A;border-radius:18px;box-shadow:0 24px 48px rgba(0,0,0,.35);padding:36px 28px;max-width:380px;width:100%;text-align:center}
+h1{font-size:20px;margin:12px 0 6px;color:#12232E}p{color:#6E6455;font-size:14px;line-height:1.5}
+input{width:100%;padding:10px 12px;border:1.5px solid #CFC4AC;border-radius:10px;font-size:16px;text-align:center;letter-spacing:6px;box-sizing:border-box;margin:10px 0;background:#FFFDF8}
+button{width:100%;padding:11px;border:none;border-radius:10px;background:linear-gradient(180deg,#D0AE66,#A8863F);color:#12232E;font-size:14px;font-weight:800;cursor:pointer}
+label{display:flex;gap:8px;align-items:center;justify-content:center;font-size:13px;color:#6E6455;margin:10px 0}
+#err{color:#B85C3D;font-size:13px;min-height:18px;margin-top:8px}
+.mark{width:56px;height:56px;border-radius:15px;background:linear-gradient(145deg,#D8B876,#A8863F);display:flex;align-items:center;justify-content:center;font-weight:800;color:#12232E;font-size:16px;margin:0 auto 4px;letter-spacing:.5px}</style></head><body>
+<div class="card"><div class="mark">AGI</div><div style="font-size:26px">🔒</div><h1>Access Restricted</h1>
 <p>TrackPH is locked to the office network. Connect to the office Wi‑Fi / internet and reload this page.</p>
 <!--GOOGLE-->
 <p style="font-size:12px;color:#94a3b8">Admin? Enter your PIN to unlock from this network.</p>
@@ -389,7 +392,7 @@ def impersonate():
         return jsonify({'error': 'Admin only'}), 403
     eid = ((request.json or {}).get('employee_id') or '').strip()
     c = get_db()
-    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year FROM employees WHERE id=?', (eid,)).fetchone()
+    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year, password_set FROM employees WHERE id=?', (eid,)).fetchone()
     c.close()
     if not emp:
         return jsonify({'error': 'Employee not found'}), 404
@@ -441,11 +444,11 @@ def google_signup():
     pw  = secrets.token_urlsafe(8)   # Google-only account; admin can reset if needed
     c.execute('''INSERT INTO employees (id, name, hourly_rate, daily_rate, regular_hours, daily_hours,
                                         allowance, allowance_type, password_hash, plain_password,
-                                        google_email, birth_year)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
-              (eid, name, 0, 0, 40, 8, 0, 'weekly', hash_pw(pw), pw, email, birth_year))
+                                        google_email, birth_year, password_set)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+              (eid, name, 0, 0, 40, 8, 0, 'weekly', hash_pw(pw), pw, email, birth_year, 0))
     c.commit()
-    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year FROM employees WHERE id=?', (eid,)).fetchone()
+    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year, password_set FROM employees WHERE id=?', (eid,)).fetchone()
     c.close()
     start_session(emp_id=eid, is_admin=False)
     return jsonify(dict(emp)), 201
@@ -514,7 +517,7 @@ def employee_login():
         return jsonify({'error': 'Incorrect password'}), 401
 
     start_session(emp_id=emp['id'], is_admin=False)
-    return jsonify({'id': emp['id'], 'name': emp['name'], 'regular_hours': emp['regular_hours'], 'daily_hours': emp['daily_hours'], 'allowance': emp['allowance'], 'allowance_type': emp['allowance_type'], 'google_email': emp['google_email']})
+    return jsonify({'id': emp['id'], 'name': emp['name'], 'regular_hours': emp['regular_hours'], 'daily_hours': emp['daily_hours'], 'allowance': emp['allowance'], 'allowance_type': emp['allowance_type'], 'google_email': emp['google_email'], 'password_set': emp['password_set']})
 
 @app.route('/api/employee-logout', methods=['POST'])
 def employee_logout():
@@ -530,7 +533,7 @@ def get_me():
     if not eid:
         return jsonify({'error': 'Not logged in'}), 401
     c = get_db()
-    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year FROM employees WHERE id=?', (eid,)).fetchone()
+    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year, password_set FROM employees WHERE id=?', (eid,)).fetchone()
     c.close()
     if not emp:
         return jsonify({'error': 'Employee not found'}), 404
@@ -544,14 +547,23 @@ def change_my_password():
     d = request.json or {}
     cur = d.get('current', '')
     nw  = d.get('new', '')
-    if not cur or not nw:
-        return jsonify({'error': 'Current and new password required'}), 400
+    if not nw:
+        return jsonify({'error': 'New password required'}), 400
     c = get_db()
     emp = c.execute('SELECT * FROM employees WHERE id=?', (eid,)).fetchone()
-    if not emp or not check_password(emp, cur):
+    if not emp:
         c.close()
-        return jsonify({'error': 'Current password is incorrect'}), 401
-    c.execute('UPDATE employees SET password_hash=?, plain_password=? WHERE id=?', (hash_pw(nw), nw, eid))
+        return jsonify({'error': 'Employee not found'}), 404
+    # Google-created accounts have an auto-generated password the user never saw —
+    # they set their first password without providing a "current" one
+    if emp['password_set']:
+        if not cur:
+            c.close()
+            return jsonify({'error': 'Current password required'}), 400
+        if not check_password(emp, cur):
+            c.close()
+            return jsonify({'error': 'Current password is incorrect'}), 401
+    c.execute('UPDATE employees SET password_hash=?, plain_password=?, password_set=1 WHERE id=?', (hash_pw(nw), nw, eid))
     c.commit()
     c.close()
     return jsonify({'ok': True})
@@ -1018,12 +1030,12 @@ def admin_logout():
 
 # ── Serve frontend ─────────────────────────────────────────────────────────
 SETUP_PAGE = '''<!doctype html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>TrackPH — Setup</title>
-<style>body{font-family:system-ui,sans-serif;background:#f8fafc;margin:0;padding:40px 20px;color:#0f172a}
-.card{background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:32px;max-width:640px;margin:0 auto}
-h1{font-size:22px;margin:0 0 4px}p{color:#64748b;font-size:14px;line-height:1.6}
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>TrackPH · AGI — Setup</title>
+<style>body{font-family:'Archivo',system-ui,sans-serif;background:#12232E;margin:0;padding:40px 20px;color:#26211D}
+.card{background:#FBF7F1;border-top:3px solid #C4A05A;border-radius:18px;box-shadow:0 24px 48px rgba(0,0,0,.35);padding:32px;max-width:640px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px;color:#12232E}p{color:#6E6455;font-size:14px;line-height:1.6}
 ol{padding-left:20px}li{margin:10px 0;font-size:14px;line-height:1.6}
-code{background:#f1f5f9;padding:2px 6px;border-radius:6px;font-size:13px}</style></head><body>
+code{background:#F3EAD5;padding:2px 6px;border-radius:6px;font-size:13px;color:#8A6D33}</style></head><body>
 <div class="card"><h1>⏱ TrackPH — almost ready!</h1>
 <p>The app is deployed, but it still needs a database. One-time setup:</p>
 <ol>
