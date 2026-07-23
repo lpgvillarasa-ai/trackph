@@ -88,36 +88,52 @@
   /* ── Tables ── */
   .table-wrap{overflow-x:auto;border-radius:var(--rs);overflow:hidden;}
   table{width:100%;border-collapse:collapse;}
-  th{text-align:left;padding:10px 16px;font-size:11.5px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.6px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);}
-  td{padding:12px 16px;border-bottom:1px solid var(--gray-100);color:var(--gray-700);font-size:13px;}
+  th{text-align:left;padding:10px 16px;font-size:10.5px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.9px;background:transparent;border-bottom:1px solid var(--gray-200);white-space:nowrap;}
+  td{padding:13px 16px;border-bottom:1px solid var(--gray-100);color:var(--gray-700);font-size:13px;font-variant-numeric:tabular-nums;}
   tr:last-child td{border-bottom:none;}
-  tr:hover td{background:#f8fafc;}
+  tbody tr{transition:background .12s;}
+  tbody tr:hover td{background:rgba(196,160,90,.05);}
+  td:first-child{min-width:230px;}
+  td:first-child strong,td:first-child div[style*="font-weight:600"]{white-space:nowrap;}
 
-  /* ── Badges ── */
-  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;}
-  .badge-green{background:var(--green-light);color:#065f46;}
-  .badge-gray{background:var(--gray-100);color:var(--gray-600);}
-  .badge-blue{background:var(--primary-light);color:var(--primary-dark);}
+  /* ── Badges — quiet dot style ── */
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:0;border-radius:0;font-size:12px;font-weight:600;background:none;}
+  .badge-green{color:var(--green);}
+  .badge-gray{color:var(--gray-400);}
+  .badge-gray::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--gray-300);}
+  .badge-blue{color:var(--primary-dark);}
 
-  /* ── Stat cards ── */
-  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:20px;}
-  .stat-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
-  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--primary);border-radius:3px 3px 0 0;}
-  .stat-card.green::before{background:var(--green);}
-  .stat-card.orange::before{background:var(--orange);}
-  .stat-card.gray::before{background:var(--gray-300);}
-  .stat-card.purple::before{background:var(--purple);}
-  .stat-label{font-size:11.5px;color:var(--gray-500);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
-  .stat-value{font-size:22px;font-weight:800;color:var(--gray-900);letter-spacing:-.5px;}
-  .stat-sub{font-size:11.5px;color:var(--gray-400);margin-top:3px;}
+  /* ── Stat strip — one joined card, hairline dividers ── */
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;margin-bottom:20px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;}
+  .stat-card{background:transparent;border:none;border-left:1px solid var(--gray-100);border-radius:0;padding:18px 22px;box-shadow:none;position:relative;overflow:hidden;}
+  .stat-card:first-child{border-left:none;}
+  .stat-label{font-size:10.5px;color:var(--gray-400);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.9px;display:flex;align-items:center;gap:7px;}
+  .stat-label::before{content:'';width:7px;height:7px;border-radius:2.5px;background:var(--gold);flex-shrink:0;}
+  .stat-card.green .stat-label::before{background:var(--green);}
+  .stat-card.orange .stat-label::before{background:var(--orange);}
+  .stat-card.gray .stat-label::before{background:var(--gray-300);}
+  .stat-card.purple .stat-label::before{background:var(--purple);}
+  .stat-value{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.6px;font-variant-numeric:tabular-nums;}
+  .stat-value .cur{font-size:12.5px;font-weight:700;color:var(--gray-400);margin-right:2px;letter-spacing:0;}
+  .stat-sub{font-size:11.5px;color:var(--gray-400);margin-top:4px;}
 
   /* ── Tabs ── */
-  .tabs{display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:24px;}
-  .tab-btn{padding:10px 20px;font-size:13.5px;font-weight:600;color:var(--gray-400);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;letter-spacing:-.1px;}
-  .tab-btn.active{color:var(--primary-dark);border-bottom-color:var(--gold);background:var(--primary-light);border-radius:8px 8px 0 0;}
-  .tab-btn:hover:not(.active){color:var(--gray-700);background:var(--gray-50);border-radius:8px 8px 0 0;}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--gray-200);margin-bottom:28px;}
+  .tab-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;font-size:13.5px;font-weight:600;color:var(--gray-500);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s;letter-spacing:-.1px;font-family:inherit;}
+  .tab-btn .ti{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.75;}
+  .tab-btn.active{color:var(--ink);border-bottom-color:var(--gold);}
+  .tab-btn.active .ti{stroke:var(--gold-deep);opacity:1;}
+  .tab-btn:hover:not(.active){color:var(--gray-700);}
   .tab-pane{display:none;}
-  .tab-pane.active{display:block;}
+  .tab-pane.active{display:block;animation:paneIn .25s ease;}
+  @keyframes paneIn{from{opacity:0;transform:translateY(4px);}}
+  /* Shared toolbar icons */
+  .bi{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+  /* Segmented week switcher */
+  .seg{display:inline-flex;align-items:center;background:var(--white);border:1px solid var(--gray-200);border-radius:10px;box-shadow:var(--shadow-sm);overflow:hidden;}
+  .seg button{border:none;background:none;padding:8px 12px;cursor:pointer;color:var(--gray-500);display:inline-flex;align-items:center;transition:background .12s,color .12s;font-family:inherit;}
+  .seg button:hover{background:var(--gray-50);color:var(--ink);}
+  .seg .seg-label{padding:8px 14px;font-weight:700;font-size:13.5px;color:var(--ink);letter-spacing:-.2px;border-left:1px solid var(--gray-100);border-right:1px solid var(--gray-100);white-space:nowrap;font-variant-numeric:tabular-nums;}
 
   /* ── Modals ── */
   .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:999;padding:16px;}
@@ -260,7 +276,7 @@
     <div class="home-logo-ring">AGI</div>
     <div class="home-tagline">Anchored Grace Innovations</div>
     <div class="home-title">TrackPH</div>
-    <div class="home-sub">Time tracking &amp; payroll for the AGI team — clock in, log your hours, get paid right.</div>
+    <div class="home-sub">Time tracking &amp; payroll for the AGI team. Clock in, log your hours, get paid right.</div>
     <div class="home-cards" id="home-cards">
       <button class="home-card" onclick="showPage('page-emp-login')" aria-label="Subcontractor login — clock in and out">
         <span class="home-card-icon" aria-hidden="true">👤</span>
@@ -299,7 +315,7 @@
       <div class="form-group">
         <label for="login-emp-select">Your Name</label>
         <select id="login-emp-select" name="username" autocomplete="username">
-          <option value="">— Select your name —</option>
+          <option value="">Select your name</option>
         </select>
         <div id="login-emp-err" class="ferr" role="alert">Please select your name.</div>
       </div>
@@ -311,7 +327,7 @@
         <div id="login-pw-err" class="ferr"></div>
       </div>
       <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px;">
-        Don't know your password? Ask your admin — or use Google below if your account is linked.
+        Don't know your password? Ask your admin, or use Google below if your account is linked.
       </div>
       <button id="login-btn" class="btn btn-primary btn-full" onclick="doEmpLogin()">Log In</button>
       <div id="google-login-wrap" style="display:none;">
@@ -358,8 +374,8 @@
     <div style="display:flex;gap:8px;align-items:center;">
       <span id="topbar-emp-name" style="font-size:13px;color:var(--gray-500);font-weight:500;"></span>
       <button id="back-admin-btn" class="btn btn-sm" style="display:none;background:#fef3c7;color:#b45309;font-weight:700;border:none;" onclick="backToAdmin()">← Back to Admin</button>
-      <button id="emp-google-btn" class="btn btn-ghost btn-sm" style="display:none;" onclick="location.href='/auth/google/start?mode=connect'">🔗 Connect Google</button>
-      <button id="emp-pw-btn" class="btn btn-ghost btn-sm" onclick="openChangePasswordModal()">🔑 Password</button>
+      <button id="emp-google-btn" class="btn btn-ghost btn-sm" style="display:none;" onclick="location.href='/auth/google/start?mode=connect'"><svg class="bi" viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 006.4.4l3-3a4.5 4.5 0 00-6.4-6.4l-1.7 1.7M14 10a4.5 4.5 0 00-6.4-.4l-3 3a4.5 4.5 0 006.4 6.4l1.7-1.7"/></svg>Connect Google</button>
+      <button id="emp-pw-btn" class="btn btn-ghost btn-sm" onclick="openChangePasswordModal()"><svg class="bi" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="4"/><path d="M11 12.5L20 3.5M16 7.5l3 3M13.5 10l2 2"/></svg>Password</button>
       <button id="emp-signout-btn" class="btn btn-ghost btn-sm" onclick="doEmpLogout()">Sign Out</button>
     </div>
   </div>
@@ -441,38 +457,37 @@
   <div class="topbar">
     <div class="topbar-logo"><span class="topbar-logo-dot"></span>TrackPH <span class="topbar-badge">Admin</span></div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button class="btn btn-ghost btn-sm" onclick="openViewAsModal()">👁 View as Subcontractor</button>
+      <button class="btn btn-ghost btn-sm" onclick="openViewAsModal()"><svg class="bi" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>View as Subcontractor</button>
       <button class="btn btn-ghost btn-sm" onclick="doAdminLogout()">Sign Out</button>
     </div>
   </div>
   <div class="content-wide">
     <div style="max-width:1000px;margin:0 auto;">
       <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('payroll')">💰 Payroll</button>
-        <button class="tab-btn" onclick="switchTab('timelog')">🕐 Time Log</button>
-        <button class="tab-btn" onclick="switchTab('team')">👥 Team</button>
-        <button class="tab-btn" onclick="switchTab('payments')">💳 Payments</button>
-        <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
+        <button class="tab-btn active" onclick="switchTab('payroll')"><svg class="ti" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/></svg>Payroll</button>
+        <button class="tab-btn" onclick="switchTab('timelog')"><svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 1.8"/></svg>Time Log</button>
+        <button class="tab-btn" onclick="switchTab('team')"><svg class="ti" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 19.5c.8-3.2 3.3-5 6.2-5s5.4 1.8 6.2 5"/><circle cx="17.2" cy="9.4" r="2.6"/><path d="M16 14.6c2.4.2 4.4 1.7 5.2 4.4"/></svg>Team</button>
+        <button class="tab-btn" onclick="switchTab('payments')"><svg class="ti" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19M6.5 14.5h4"/></svg>Payments</button>
+        <button class="tab-btn" onclick="switchTab('settings')"><svg class="ti" viewBox="0 0 24 24"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2.4"/><circle cx="8" cy="16" r="2.4"/></svg>Settings</button>
       </div>
 
       <!-- PAYROLL -->
       <div id="tab-payroll" class="tab-pane active">
-        <div class="week-nav">
-          <button class="btn btn-ghost btn-sm" onclick="changeWeek(-1)">← Prev</button>
-          <div id="week-label" class="week-nav-label">—</div>
-          <button class="btn btn-ghost btn-sm" onclick="changeWeek(1)">Next →</button>
-          <button class="btn btn-ghost btn-sm" onclick="jumpToToday()" style="color:var(--primary);font-weight:600;">Today</button>
-          <input type="date" id="payroll-date-pick" onchange="jumpToDate(this.value)" style="border:1px solid var(--gray-200);border-radius:var(--rs);padding:4px 8px;font-size:13px;cursor:pointer;width:150px;flex-shrink:0;" title="Jump to any week" />
-          <div style="margin-left:auto;display:flex;gap:6px;flex-shrink:0;">
-            <button class="btn btn-ghost btn-sm" onclick="downloadPayrollTxt()" title="Download as text file">⬇ Text</button>
-            <button class="btn btn-ghost btn-sm" onclick="printPayroll()" title="Print or save as PDF">🖨 PDF</button>
+        <div class="week-nav" style="flex-wrap:wrap;">
+          <div class="seg">
+            <button onclick="changeWeek(-1)" aria-label="Previous week"><svg class="bi" viewBox="0 0 24 24"><path d="M14.5 6L8.5 12l6 6"/></svg></button>
+            <div id="week-label" class="seg-label">—</div>
+            <button onclick="changeWeek(1)" aria-label="Next week"><svg class="bi" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></svg></button>
           </div>
-        </div>
-        <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <label style="font-size:13px;font-weight:600;color:var(--gray-600);">Filter Subcontractor:</label>
-          <select id="payroll-filter-emp" onchange="renderPayroll()" style="width:auto;min-width:180px;">
+          <button class="btn btn-ghost btn-sm" onclick="jumpToToday()">Today</button>
+          <input type="date" id="payroll-date-pick" onchange="jumpToDate(this.value)" style="border:1px solid var(--gray-200);border-radius:10px;padding:7px 10px;font-size:13px;cursor:pointer;width:150px;flex-shrink:0;background:var(--white);color:var(--gray-600);" title="Jump to any week" />
+          <select id="payroll-filter-emp" onchange="renderPayroll()" style="width:auto;min-width:170px;border-radius:10px;padding:8px 12px;">
             <option value="">All Subcontractors</option>
           </select>
+          <div style="margin-left:auto;display:flex;gap:6px;flex-shrink:0;">
+            <button class="btn btn-ghost btn-sm" onclick="downloadPayrollTxt()" title="Download as text file"><svg class="bi" viewBox="0 0 24 24"><path d="M12 4v10m0 0l-4-4m4 4l4-4M4 18.5h16"/></svg>Export</button>
+            <button class="btn btn-ghost btn-sm" onclick="printPayroll()" title="Print or save as PDF"><svg class="bi" viewBox="0 0 24 24"><path d="M7 8V3.5h10V8M7 16.5H4.5V9.5h15v7H17"/><rect x="7" y="14" width="10" height="6.5" rx="1"/></svg>Print</button>
+          </div>
         </div>
         <div id="payroll-stats" class="stats-row"></div>
         <div class="card" style="margin-bottom:0;">
@@ -496,8 +511,8 @@
           <button class="btn btn-ghost btn-sm" onclick="setTimelogWeek(0)" style="color:var(--primary);">This Week</button>
           <button class="btn btn-ghost btn-sm" onclick="setTimelogWeek(-1)">Last Week</button>
           <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-ghost btn-sm" onclick="downloadTimelogTxt()">⬇ Text</button>
-            <button class="btn btn-ghost btn-sm" onclick="printTimelog()">🖨 PDF</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadTimelogTxt()"><svg class="bi" viewBox="0 0 24 24"><path d="M12 4v10m0 0l-4-4m4 4l4-4M4 18.5h16"/></svg>Export</button>
+            <button class="btn btn-ghost btn-sm" onclick="printTimelog()"><svg class="bi" viewBox="0 0 24 24"><path d="M7 8V3.5h10V8M7 16.5H4.5V9.5h15v7H17"/><rect x="7" y="14" width="10" height="6.5" rx="1"/></svg>Print</button>
             <button class="btn btn-primary btn-sm" onclick="openAddEntryModal()">+ Add Entry</button>
           </div>
         </div>
@@ -558,7 +573,7 @@
               <tbody id="payments-pending-tbody"></tbody>
             </table>
           </div>
-          <div id="payments-pending-empty" class="empty" style="display:none;padding:24px 20px;"><div class="empty-icon">✅</div><div>All caught up — no pending payments.</div></div>
+          <div id="payments-pending-empty" class="empty" style="display:none;padding:24px 20px;"><div class="empty-icon">✅</div><div>All caught up. No pending payments.</div></div>
         </div>
 
         <!-- History -->
@@ -599,7 +614,7 @@
           <div class="card" id="google-settings-card" style="display:none;">
             <div class="card-title">Admin Access</div>
             <div id="admin-google-status" style="font-size:13px;color:var(--gray-500);margin-bottom:6px;"></div>
-            <div style="font-size:11px;color:var(--gray-400);">Only this Google account can open the admin dashboard. PIN login to the dashboard is disabled while Google sign-in is active — the PIN is only used to unlock the site when your IP changes.</div>
+            <div style="font-size:11px;color:var(--gray-400);">Only this Google account can open the admin dashboard. PIN login to the dashboard is disabled while Google sign-in is active. The PIN is only used to unlock the site when your IP changes.</div>
           </div>
           <div class="card">
             <div class="card-title">IP Access Restriction</div>
@@ -631,7 +646,7 @@
       <div class="form-group"><label>Daily Base Pay (PHP/day)</label><input type="number" id="ef-daily-rate" placeholder="0.00" step="0.01" min="0" /></div>
       <div class="form-group"><label>OT Rate (PHP/hr) <small style="color:var(--gray-400);font-weight:400;">overtime only</small></label><input type="number" id="ef-rate" placeholder="0.00" step="0.01" min="0" /></div>
     </div>
-    <div class="form-group"><label>Daily Regular Hours <small style="color:var(--gray-400);font-weight:400;">(OT threshold — hours before OT kicks in)</small></label><input type="number" id="ef-daily-hours" placeholder="8" step="0.5" min="0.5" max="24" /></div>
+    <div class="form-group"><label>Daily Regular Hours <small style="color:var(--gray-400);font-weight:400;">(OT threshold: hours before OT kicks in)</small></label><input type="number" id="ef-daily-hours" placeholder="8" step="0.5" min="0.5" max="24" /></div>
     <div class="form-row">
       <div class="form-group">
         <label>Allowance (PHP)</label>
@@ -697,9 +712,9 @@
 <!-- MODAL: View as Subcontractor (Admin) -->
 <div id="modal-viewas" class="modal-overlay">
   <div class="modal">
-    <div class="modal-title">👁 View as Subcontractor</div>
+    <div class="modal-title">View as Subcontractor</div>
     <div style="color:var(--gray-600);font-size:14px;margin-bottom:16px;">
-      See TrackPH exactly as this person does — clock in/out, breaks, hours. Great for testing with a dummy account.
+      See TrackPH exactly as this person does: clock in/out, breaks, hours. Great for testing with a dummy account.
     </div>
     <div class="form-group">
       <label for="viewas-select">Subcontractor</label>
@@ -715,7 +730,7 @@
 <!-- MODAL: Merge Profiles (Admin) -->
 <div id="modal-merge" class="modal-overlay">
   <div class="modal">
-    <div class="modal-title">🔀 Merge Profiles</div>
+    <div class="modal-title">Merge Profiles</div>
     <div style="color:var(--gray-600);font-size:14px;margin-bottom:16px;">
       Combine another profile into <strong id="merge-keep-name"></strong>.
     </div>
@@ -738,7 +753,7 @@
 <!-- MODAL: Change Own Password (Employee) -->
 <div id="modal-change-pw" class="modal-overlay">
   <div class="modal">
-    <div class="modal-title">🔑 Change Password</div>
+    <div class="modal-title">Change Password</div>
     <div class="form-group">
       <span id="cpw-cur-wrap">
       <label for="cpw-cur">Current Password</label>
@@ -929,7 +944,7 @@ async function loadLoginDropdown(){
   try {
     const names = await GET('/employee-names');
     const sel = document.getElementById('login-emp-select');
-    sel.innerHTML = '<option value="">— Select your name —</option>'+
+    sel.innerHTML = '<option value="">Select your name</option>'+
       names.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
   } catch(e){ /* no employees yet */ }
 }
@@ -1504,16 +1519,17 @@ async function renderPayroll(){
         :'<span style="color:var(--gray-300);">—</span>')+'</td>' +
       '<td><div style="display:flex;align-items:center;gap:6px;">' +
         (r.bonus>0?'<span style="color:var(--green);font-weight:600;">PHP '+r.bonus.toFixed(2)+'</span>':'<span style="color:var(--gray-300);">—</span>') +
-        '<button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px;" title="'+(r.notes?'Note: '+r.notes:'')+'" onclick="openBonusModal(\''+r.emp.id+'\',\''+r.weekStart+'\','+r.bonus+',\''+encodeURIComponent(r.notes)+'\')">✏️</button>' +
+        '<button class="btn btn-ghost btn-sm" style="padding:3px 8px;" title="'+(r.notes?'Note: '+r.notes:'Add bonus / note')+'" onclick="openBonusModal(\''+r.emp.id+'\',\''+r.weekStart+'\','+r.bonus+',\''+encodeURIComponent(r.notes)+'\')"><svg class="bi" viewBox="0 0 24 24"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z"/></svg></button>' +
       '</div></td>' +
-      '<td><strong>PHP '+r.total.toFixed(2)+'</strong>'+(r.notes?'<div style="font-size:10px;color:var(--gray-400);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+r.notes+'">📝 '+r.notes+'</div>':'')+'</td></tr>'
+      '<td><strong>PHP '+r.total.toFixed(2)+'</strong>'+(r.notes?'<div style="font-size:10px;color:var(--gray-400);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic;" title="'+r.notes+'">'+r.notes+'</div>':'')+'</td></tr>'
     ).join('');
   } catch(e){ showToast('Payroll error: '+e.message); }
 }
 
 function sc(label,value,sub,cls){
+  const v=String(value).replace(/^PHP /,'<span class="cur">PHP</span>');
   return '<div class="stat-card'+(cls?' '+cls:'')+'">'+'<div class="stat-label">'+label+'</div>'+
-    '<div class="stat-value">'+value+'</div>'+
+    '<div class="stat-value">'+v+'</div>'+
     '<div class="stat-sub">'+sub+'</div></div>';
 }
 
@@ -1543,7 +1559,7 @@ async function renderTimelog(){
   // Build label for export header
   const empName=fEmp?(empCache.find(e=>e.id===fEmp)?.name||'All'):'All Subcontractors';
   const dateRange=(fStart||fEnd)?((fStart||'?')+' to '+(fEnd||'?')):'All dates';
-  _lastTimelogLabel=empName+' — '+dateRange;
+  _lastTimelogLabel=empName+' · '+dateRange;
 
   try {
     const entries=await GET('/entries'+qs);
@@ -1598,7 +1614,7 @@ async function renderTeam(){
           avDiv(emp.name,28)+
           '<div><div style="font-weight:600;font-size:13px;">'+emp.name+'</div>'+
           '<div style="font-size:11px;color:var(--gray-500);">Since '+since+'</div></div>'+
-          '<button class="btn btn-sm" style="margin-left:8px;background:var(--red);color:white;font-weight:700;border:none;" onclick="adminClockOut(\''+emp.id+'\')">⏏ Force Out</button>'+
+          '<button class="btn btn-sm" style="margin-left:8px;background:var(--red);color:white;font-weight:700;border:none;" onclick="adminClockOut(\''+emp.id+'\')">Force Out</button>'+
           '</div>';
       }).join('');
       panel.style.display='block';
@@ -1615,7 +1631,7 @@ async function renderTeam(){
       return '<tr>'+
         '<td><div style="display:flex;align-items:center;gap:8px;">'+avDiv(emp.name,32)+
           '<div><strong>'+emp.name+'</strong>'+
-          (emp.role==='admin'?' <span class="badge" style="background:#fef3c7;color:#b45309;">👑 Admin</span>':'')+
+          (emp.role==='admin'?' <span class="badge" style="background:#fef3c7;color:#b45309;">Admin</span>':'')+
           ((emp.google_email||emp.birth_year)?'<div style="font-size:11px;color:var(--gray-400);">'+
             (emp.google_email?'🔗 '+emp.google_email:'')+
             (emp.birth_year?(emp.google_email?' · ':'')+'b. '+emp.birth_year:'')+'</div>':'')+
@@ -1624,16 +1640,16 @@ async function renderTeam(){
         '<td>PHP '+(emp.hourly_rate||0).toFixed(2)+'/hr · '+otMult+'x</td>'+
         '<td>'+(emp.daily_hours||8)+'h/day</td>'+
         '<td>'+((emp.allowance||0)>0?'PHP '+(emp.allowance||0).toFixed(2)+'/'+(emp.allowance_type==='daily'?'day':'wk'):'<span style="color:var(--gray-300);">—</span>')+'</td>'+
-        '<td><div style="display:flex;align-items:center;gap:6px;"><span id="pw-'+emp.id+'" style="font-family:monospace;background:var(--gray-100);padding:2px 8px;border-radius:4px;font-size:13px;letter-spacing:2px;">••••••</span><button class="btn btn-ghost btn-sm" style="padding:4px 8px;" aria-label="Show password for '+emp.name+'" onclick="togglePw(\''+emp.id+'\',\''+encodeURIComponent(emp.plain_password||'1234')+'\')" id="pw-eye-'+emp.id+'"><span aria-hidden="true">👁</span></button><button class="btn btn-ghost btn-sm" onclick="openResetPwModal(\''+emp.id+'\',\''+emp.name+'\')"><span aria-hidden="true">✏️</span> Edit</button></div></td>'+
+        '<td><div style="display:flex;align-items:center;gap:6px;"><span id="pw-'+emp.id+'" style="font-family:monospace;background:var(--gray-100);padding:2px 8px;border-radius:4px;font-size:13px;letter-spacing:2px;">••••••</span><button class="btn btn-ghost btn-sm" style="padding:4px 8px;" aria-label="Show password for '+emp.name+'" onclick="togglePw(\''+emp.id+'\',\''+encodeURIComponent(emp.plain_password||'1234')+'\')" id="pw-eye-'+emp.id+'"><svg class="bi" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button><button class="btn btn-ghost btn-sm" onclick="openResetPwModal(\''+emp.id+'\',\''+emp.name+'\')">Edit</button></div></td>'+
         '<td>'+(on?'<span class="badge badge-green">● Active</span>':'<span class="badge badge-gray">Offline</span>')+'</td>'+
         '<td><div style="display:flex;gap:8px;">'+
           '<button class="btn btn-ghost btn-sm" onclick="openEditEmpModal(\''+emp.id+'\')">Edit</button>'+
-          '<button class="btn btn-ghost btn-sm" onclick="openMergeModal(\''+emp.id+'\')">🔀 Merge</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="openMergeModal(\''+emp.id+'\')">Merge</button>'+
           (emp.role==='admin'
             ?'<button class="btn btn-ghost btn-sm" onclick="setEmpRole(\''+emp.id+'\',\'subcontractor\')">Remove Admin</button>'
-            :'<button class="btn btn-ghost btn-sm" onclick="setEmpRole(\''+emp.id+'\',\'admin\')">👑 Make Admin</button>')+
+            :'<button class="btn btn-ghost btn-sm" onclick="setEmpRole(\''+emp.id+'\',\'admin\')">Make Admin</button>')+
           '<button class="btn btn-danger btn-sm" onclick="confirmDeleteEmp(\''+emp.id+'\')">Delete</button>'+
-          (on?'<button class="btn btn-sm" style="background:var(--red);color:white;font-weight:700;border:none;" onclick="adminClockOut(\''+emp.id+'\')">⏏ Force Out</button>':'')+
+          (on?'<button class="btn btn-sm" style="background:var(--red);color:white;font-weight:700;border:none;" onclick="adminClockOut(\''+emp.id+'\')">Force Out</button>':'')+
         '</div></td></tr>';
     }).join('');
   } catch(e){ showToast('Error: '+e.message); }
@@ -1657,7 +1673,7 @@ async function doViewAs(){
     closeModal('modal-viewas');
     showPage('page-employee');
     renderEmployeeDashboard();
-    showToast('👁 Viewing as '+currentEmp.name+' — use “Back to Admin” to return.');
+    showToast('Viewing as '+currentEmp.name+'. Use “Back to Admin” to return.');
   }catch(e){ showToast('Error: '+e.message); }
   finally{ btn.disabled=false; btn.textContent='View'; }
 }
@@ -1676,7 +1692,7 @@ async function setEmpRole(empId, role){
   try{
     await PUT('/employees/'+empId+'/role',{role});
     await loadAdminData();
-    showToast(role==='admin'?'👑 '+label+' is now an admin.':label+' is now a subcontractor.');
+    showToast(role==='admin'?label+' is now an admin.':label+' is now a subcontractor.');
   }catch(e){ showToast('Error: '+e.message); }
 }
 
@@ -1690,7 +1706,7 @@ function openMergeModal(keepId){
   if(!others.length){ showToast('No other profile to merge with.'); return; }
   ['merge-keep-name','merge-keep-name2','merge-keep-name3'].forEach(id=>document.getElementById(id).textContent=keep.name);
   document.getElementById('merge-from-select').innerHTML=
-    '<option value="">— Select profile —</option>'+
+    '<option value="">Select profile</option>'+
     others.map(e=>'<option value="'+e.id+'">'+e.name+(e.google_email?' (🔗 '+e.google_email+')':'')+'</option>').join('');
   openModal('modal-merge');
 }
@@ -1720,7 +1736,7 @@ let bonusEmpId='', bonusWeekStart='';
 function openBonusModal(empId, weekStart, currentBonus, encodedNotes){
   bonusEmpId=empId; bonusWeekStart=weekStart;
   const emp=empCache.find(e=>e.id===empId);
-  document.getElementById('bonus-emp-label').textContent=(emp?emp.name+' — ':'')+weekStart;
+  document.getElementById('bonus-emp-label').textContent=(emp?emp.name+' · ':'')+weekStart;
   document.getElementById('bonus-amount').value=currentBonus||'';
   document.getElementById('bonus-notes').value=decodeURIComponent(encodedNotes||'');
   openModal('modal-bonus');
@@ -1943,7 +1959,7 @@ function downloadPayrollTxt(){
   const rows=_lastPayrollRows; if(!rows||!rows.length){showToast('No payroll data to download.');return;}
   const weekLbl=document.getElementById('week-label').textContent;
   const sep='-'.repeat(90);
-  let txt='PAYROLL — '+weekLbl+'\n'+sep+'\n';
+  let txt='PAYROLL: '+weekLbl+'\n'+sep+'\n';
   const col=(s,w)=>String(s??'').padEnd(w).slice(0,w);
   txt+=col('NAME',22)+col('DAYS',6)+col('REG HRS',10)+col('OT HRS',10)+col('REG PAY',12)+col('OT PAY',12)+col('ALLOW',12)+col('BONUS',10)+col('TOTAL',12)+'\n';
   txt+=sep+'\n';
@@ -1969,7 +1985,7 @@ function downloadPayrollTxt(){
 function printPayroll(){
   const rows=_lastPayrollRows; if(!rows||!rows.length){showToast('No payroll data to print.');return;}
   const weekLbl=document.getElementById('week-label').textContent;
-  let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Payroll — '+weekLbl+'</title><style>'+
+  let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Payroll: '+weekLbl+'</title><style>'+
     'body{font-family:Arial,sans-serif;font-size:12px;margin:24px;}'+
     'h2{font-size:16px;margin-bottom:4px;}'+
     '.sub{color:#666;font-size:11px;margin-bottom:16px;}'+
@@ -2015,7 +2031,7 @@ function downloadTimelogTxt(){
   const entries=_lastTimelogEntries;
   if(!entries||!entries.length){showToast('No entries to download.');return;}
   const sep='-'.repeat(80);
-  let txt='TIME LOG — '+_lastTimelogLabel+'\n'+sep+'\n';
+  let txt='TIME LOG: '+_lastTimelogLabel+'\n'+sep+'\n';
   const col=(s,w)=>String(s??'').padEnd(w).slice(0,w);
   txt+=col('NAME',22)+col('DATE',14)+col('CLOCK IN',12)+col('CLOCK OUT',12)+col('DURATION',12)+col('OT HRS',10)+'\n'+sep+'\n';
   let totalMs=0, totalOtMs=0;
@@ -2063,7 +2079,7 @@ function printTimelog(){
       '<td>'+(otMs>0?'<span style="color:#d97706;font-weight:600;">'+msToHM(otMs)+'</span>':'—')+'</td>'+
     '</tr>';
   });
-  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Time Log — '+_lastTimelogLabel+'</title><style>'+
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Time Log: '+_lastTimelogLabel+'</title><style>'+
     'body{font-family:Arial,sans-serif;font-size:12px;margin:24px;}'+
     'h2{font-size:16px;margin-bottom:2px;}'+
     '.sub{color:#666;font-size:11px;margin-bottom:16px;}'+
@@ -2121,7 +2137,7 @@ async function initApp(){
     notlinked:'This Google account is not linked yet. Log in with your password first, then tap “Connect Google”.',
     taken:'That Google account is already linked to another profile.',
     denied:'Google sign-in was cancelled.',
-    state:'Sign-in expired — please try again.',
+    state:'Sign-in expired. Please try again.',
     google:'Could not reach Google. Please try again.',
     session:'Please log in first, then connect your Google account.',
     noemail:'Google did not share a verified email address.',
@@ -2181,7 +2197,7 @@ async function refreshSecuritySettings(){
     list.innerHTML=ips.length
       ? ips.map(ip=>'<span style="display:inline-flex;align-items:center;gap:6px;background:var(--primary-light);color:var(--primary);font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;margin:0 6px 6px 0;">'+ip+
           '<a style="cursor:pointer;color:var(--red);font-weight:700;" onclick="removeIp(\''+ip+'\')" title="Remove">✕</a></span>').join('')
-      : '<div style="font-size:13px;color:var(--gray-400);">Restriction is <b>OFF</b> — anyone with the link can open this site.</div>';
+      : '<div style="font-size:13px;color:var(--gray-400);">Restriction is <b>OFF</b>. Anyone with the link can open this site.</div>';
     if(cfg.google_enabled){
       document.getElementById('google-settings-card').style.display='block';
       document.getElementById('admin-google-status').innerHTML=

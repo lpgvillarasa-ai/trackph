@@ -262,7 +262,7 @@ def blocked_page():
 
 BLOCKED_PAGE = '''<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TrackPH · AGI — Access Restricted</title>
+<title>TrackPH · AGI · Access Restricted</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%23C4A05A'/%3E%3Ctext%20x='32'%20y='35'%20font-family='Arial,sans-serif'%20font-size='22'%20font-weight='800'%20fill='%2312232E'%20text-anchor='middle'%20dominant-baseline='central'%3EAGI%3C/text%3E%3C/svg%3E">
 <style>body{font-family:'Archivo',system-ui,sans-serif;background:linear-gradient(168deg,#0C1820,#12232E 45%,#1A3244);display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}
 .card{background:#FFFDF8;border-top:3px solid #C4A05A;border-radius:18px;box-shadow:0 24px 48px rgba(0,0,0,.35);padding:36px 28px;max-width:380px;width:100%;text-align:center}
@@ -1008,7 +1008,7 @@ def delete_payment(pid):
 def admin_login():
     if google_enabled():
         # Admin access is locked to the Google accounts in ADMIN_EMAILS
-        return jsonify({'error': 'PIN login is disabled — use “Sign in with Google”'}), 403
+        return jsonify({'error': 'PIN login is disabled. Use “Sign in with Google”'}), 403
     d = request.json or {}
     pin = d.get('pin', '')
     c = get_db()
@@ -1030,13 +1030,13 @@ def admin_logout():
 
 # ── Serve frontend ─────────────────────────────────────────────────────────
 SETUP_PAGE = '''<!doctype html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>TrackPH · AGI — Setup</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>TrackPH · AGI · Setup</title>
 <style>body{font-family:'Archivo',system-ui,sans-serif;background:#12232E;margin:0;padding:40px 20px;color:#26211D}
 .card{background:#FBF7F1;border-top:3px solid #C4A05A;border-radius:18px;box-shadow:0 24px 48px rgba(0,0,0,.35);padding:32px;max-width:640px;margin:0 auto}
 h1{font-size:22px;margin:0 0 4px;color:#12232E}p{color:#6E6455;font-size:14px;line-height:1.6}
 ol{padding-left:20px}li{margin:10px 0;font-size:14px;line-height:1.6}
 code{background:#F3EAD5;padding:2px 6px;border-radius:6px;font-size:13px;color:#8A6D33}</style></head><body>
-<div class="card"><h1>⏱ TrackPH — almost ready!</h1>
+<div class="card"><h1>⏱ TrackPH: almost ready!</h1>
 <p>The app is deployed, but it still needs a database. One-time setup:</p>
 <ol>
 <li>In your <b>Vercel dashboard</b> open this project → <b>Storage</b> tab → <b>Create Database</b> → choose <b>Neon (Postgres)</b> (free plan) → Connect. This automatically adds the <code>DATABASE_URL</code> environment variable.</li>
