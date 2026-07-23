@@ -33,9 +33,10 @@ def start_session(**kwargs):
 GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '').strip()
 
-# Google accounts that are always admins (comma-separated in ADMIN_EMAILS env)
+# Google accounts that are always admins (comma-separated in ADMIN_EMAILS env).
+# Defaults: the CEO and co-founder.
 ADMIN_EMAILS = {e.strip().lower() for e in
-                os.environ.get('ADMIN_EMAILS', 'lpg.villarasa@gmail.com').split(',')
+                os.environ.get('ADMIN_EMAILS', 'lpg.villarasa@gmail.com,kyarahs220@gmail.com').split(',')
                 if e.strip()}
 
 # ── Database ──────────────────────────────────────────────────────────────
@@ -232,7 +233,10 @@ def ip_status():
 
 @app.route('/api/ip-unlock', methods=['POST'])
 def ip_unlock():
-    # Emergency door: the admin PIN lets the owner back in when their IP changes
+    # Emergency door for LOCAL mode only. In cloud mode the master admin
+    # signs in with Google from anywhere, so the PIN backdoor stays closed.
+    if google_enabled():
+        return jsonify({'error': 'PIN unlock is disabled. The owner can sign in with Google.'}), 403
     d = request.json or {}
     c = get_db()
     stored_pin = get_setting(c, 'pin', '1234')
@@ -252,13 +256,23 @@ def ip_unlock():
     return jsonify({'ok': True})
 
 def blocked_page():
-    google_btn = ''
+    html = BLOCKED_PAGE.replace('<!--IP-->', client_ip() or 'unknown')
     if google_enabled():
-        google_btn = ('<div style="margin:16px 0;border-top:1px solid #e2e8f0;padding-top:16px">'
-                      '<p style="font-size:12px;color:#94a3b8;margin:0 0 10px">Owner? Sign in from anywhere:</p>'
-                      '<button style="background:#fff;color:#334155;border:1px solid #cbd5e1" '
+        # Cloud mode: the master admin signs in with Google; no PIN backdoor
+        google_btn = ('<div style="margin:16px 0;border-top:1px solid #E6DDCA;padding-top:16px">'
+                      '<p style="font-size:12px;color:#9C9280;margin:0 0 10px">Owner? Sign in from anywhere:</p>'
+                      '<button style="background:#fff;color:#3E382E;border:1px solid #CFC4AC" '
                       'onclick="location.href=\'/auth/google/start?mode=login\'">Sign in with Google</button></div>')
-    return BLOCKED_PAGE.replace('<!--GOOGLE-->', google_btn)
+        html = html.replace('<!--GOOGLE-->', google_btn)
+        # strip the PIN unlock section
+        start = html.find('<!--PIN-->')
+        end   = html.find('<!--/PIN-->')
+        if start != -1 and end != -1:
+            html = html[:start] + html[end + len('<!--/PIN-->'):]
+    else:
+        html = html.replace('<!--GOOGLE-->', '')
+        html = html.replace('<!--PIN-->', '').replace('<!--/PIN-->', '')
+    return html
 
 BLOCKED_PAGE = '''<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -274,17 +288,21 @@ label{display:flex;gap:8px;align-items:center;justify-content:center;font-size:1
 .mark{width:56px;height:56px;border-radius:15px;background:linear-gradient(145deg,#D8B876,#A8863F);display:flex;align-items:center;justify-content:center;font-weight:800;color:#12232E;font-size:16px;margin:0 auto 4px;letter-spacing:.5px}</style></head><body>
 <div class="card"><div class="mark">AGI</div><div style="font-size:26px">🔒</div><h1>Access Restricted</h1>
 <p>TrackPH is locked to the office network. Connect to the office Wi‑Fi / internet and reload this page.</p>
+<p style="font-size:11px;color:#9C9280">Your network IP: <b><!--IP--></b>. If you believe this network should be allowed, send this IP to your admin.</p>
 <!--GOOGLE-->
-<p style="font-size:12px;color:#94a3b8">Admin? Enter your PIN to unlock from this network.</p>
+<!--PIN-->
+<p style="font-size:12px;color:#9C9280">Admin? Enter your PIN to unlock from this network.</p>
 <input id="pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
 <label><input id="rem" type="checkbox" style="width:auto;letter-spacing:0"> Also allow this IP from now on</label>
-<button onclick="go()">Unlock</button><div id="err"></div></div>
+<button onclick="go()">Unlock</button><div id="err"></div>
 <script>async function go(){
  const r=await fetch('/api/ip-unlock',{method:'POST',headers:{'Content-Type':'application/json'},
   body:JSON.stringify({pin:document.getElementById('pin').value,remember:document.getElementById('rem').checked})});
  if(r.ok){location.href='/';}else{document.getElementById('err').textContent='Incorrect PIN.';}
 }
 document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')go()});</script>
+<!--/PIN-->
+</div>
 </body></html>'''
 
 # ── Google OAuth ───────────────────────────────────────────────────────────
