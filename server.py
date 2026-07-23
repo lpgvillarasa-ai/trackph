@@ -649,6 +649,12 @@ def clock_in(emp_id):
     if not is_admin() and current_emp_id() != emp_id:
         return jsonify({'error': 'Unauthorized'}), 403
     c = get_db()
+    # Guard against stale sessions (e.g. profile was merged/deleted) — otherwise
+    # the entry would be recorded against a profile that no longer exists
+    if not c.execute('SELECT 1 AS x FROM employees WHERE id=?', (emp_id,)).fetchone():
+        c.close()
+        session.clear()
+        return jsonify({'error': 'Your account was updated. Please sign in again.'}), 401
     active = c.execute('SELECT id FROM entries WHERE employee_id=? AND clock_out IS NULL', (emp_id,)).fetchone()
     if active:
         c.close()
@@ -807,6 +813,10 @@ def break_start(emp_id):
     if not is_admin() and current_emp_id() != emp_id:
         return jsonify({'error': 'Unauthorized'}), 403
     c = get_db()
+    if not c.execute('SELECT 1 AS x FROM employees WHERE id=?', (emp_id,)).fetchone():
+        c.close()
+        session.clear()
+        return jsonify({'error': 'Your account was updated. Please sign in again.'}), 401
     active = c.execute(
         'SELECT id FROM entries WHERE employee_id=? AND clock_out IS NULL', (emp_id,)
     ).fetchone()
