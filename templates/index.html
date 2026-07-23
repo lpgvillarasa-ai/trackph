@@ -243,7 +243,7 @@
     <div class="home-tagline">Team Time Tracker</div>
     <div class="home-title">TrackPH</div>
     <div class="home-sub">Payroll-ready time tracking for local teams — runs on your own network, no subscription needed.</div>
-    <div class="home-cards">
+    <div class="home-cards" id="home-cards">
       <button class="home-card" onclick="showPage('page-emp-login')" aria-label="Subcontractor login — clock in and out">
         <span class="home-card-icon" aria-hidden="true">👤</span>
         <div class="home-card-label">Subcontractor</div>
@@ -254,6 +254,13 @@
         <div class="home-card-label">Admin</div>
         <div class="home-card-desc">Payroll, payments &amp; team</div>
       </button>
+    </div>
+    <div id="home-signin" style="display:none;max-width:340px;margin:0 auto;">
+      <button class="btn btn-full" style="background:#fff;border:1px solid var(--gray-300);color:var(--gray-700);font-weight:700;padding:14px;font-size:15px;box-shadow:var(--shadow);" onclick="location.href='/auth/google/start?mode=login'">
+        <svg width="20" height="20" viewBox="0 0 48 48" style="margin-right:10px;vertical-align:-4px;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Sign in with Google
+      </button>
+      <div style="font-size:12px;color:var(--gray-400);margin-top:10px;">New here? Signing in creates your account automatically.</div>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:14px;" onclick="showPage('page-emp-login')">Use password instead</button>
     </div>
     <div class="home-features">
       <span class="home-feature">Automatic OT calculation</span>
@@ -568,10 +575,9 @@
             <button class="btn btn-primary" onclick="saveOtMult()">Save</button>
           </div>
           <div class="card" id="google-settings-card" style="display:none;">
-            <div class="card-title">Google Sign-In (Admin)</div>
-            <div id="admin-google-status" style="font-size:13px;color:var(--gray-500);margin-bottom:12px;">Not connected.</div>
-            <button class="btn btn-primary" onclick="location.href='/auth/google/start?mode=connect'">🔗 Connect my Google account</button>
-            <div style="font-size:11px;color:var(--gray-400);margin-top:8px;">Once connected, you can open the admin dashboard by signing in with this Google account — no PIN needed.</div>
+            <div class="card-title">Admin Access</div>
+            <div id="admin-google-status" style="font-size:13px;color:var(--gray-500);margin-bottom:6px;"></div>
+            <div style="font-size:11px;color:var(--gray-400);">Only this Google account can open the admin dashboard. PIN login to the dashboard is disabled while Google sign-in is active — the PIN is only used to unlock the site when your IP changes.</div>
           </div>
           <div class="card">
             <div class="card-title">IP Access Restriction</div>
@@ -1302,7 +1308,7 @@ async function checkPin(){
     await loadAdminData();
     showPage('page-admin');
   } catch(e){
-    document.getElementById('pin-error').textContent='Incorrect PIN. Try again.';
+    document.getElementById('pin-error').textContent=(e.message&&e.message.includes('disabled'))?e.message:'Incorrect PIN. Try again.';
     pinBuffer=''; updatePinDisplay();
   }
 }
@@ -1557,6 +1563,7 @@ async function renderTeam(){
       return '<tr>'+
         '<td><div style="display:flex;align-items:center;gap:8px;">'+avDiv(emp.name,32)+
           '<div><strong>'+emp.name+'</strong>'+
+          (emp.role==='admin'?' <span class="badge" style="background:#fef3c7;color:#b45309;">👑 Admin</span>':'')+
           ((emp.google_email||emp.birth_year)?'<div style="font-size:11px;color:var(--gray-400);">'+
             (emp.google_email?'🔗 '+emp.google_email:'')+
             (emp.birth_year?(emp.google_email?' · ':'')+'b. '+emp.birth_year:'')+'</div>':'')+
@@ -1570,11 +1577,25 @@ async function renderTeam(){
         '<td><div style="display:flex;gap:8px;">'+
           '<button class="btn btn-ghost btn-sm" onclick="openEditEmpModal(\''+emp.id+'\')">Edit</button>'+
           '<button class="btn btn-ghost btn-sm" onclick="openMergeModal(\''+emp.id+'\')">🔀 Merge</button>'+
+          (emp.role==='admin'
+            ?'<button class="btn btn-ghost btn-sm" onclick="setEmpRole(\''+emp.id+'\',\'subcontractor\')">Remove Admin</button>'
+            :'<button class="btn btn-ghost btn-sm" onclick="setEmpRole(\''+emp.id+'\',\'admin\')">👑 Make Admin</button>')+
           '<button class="btn btn-danger btn-sm" onclick="confirmDeleteEmp(\''+emp.id+'\')">Delete</button>'+
           (on?'<button class="btn btn-sm" style="background:var(--red);color:white;font-weight:700;border:none;" onclick="adminClockOut(\''+emp.id+'\')">⏏ Force Out</button>':'')+
         '</div></td></tr>';
     }).join('');
   } catch(e){ showToast('Error: '+e.message); }
+}
+
+async function setEmpRole(empId, role){
+  const emp=empCache.find(e=>e.id===empId);
+  const label=emp?emp.name:'this person';
+  if(role==='admin' && !confirm('Make '+label+' an admin? They will see payroll, rates and all team data when they sign in.')) return;
+  try{
+    await PUT('/employees/'+empId+'/role',{role});
+    await loadAdminData();
+    showToast(role==='admin'?'👑 '+label+' is now an admin.':label+' is now a subcontractor.');
+  }catch(e){ showToast('Error: '+e.message); }
 }
 
 // ─── Merge profiles ─────────────────────────────────────────────────────────
@@ -1998,6 +2019,8 @@ async function initApp(){
   if(APP_CFG.google_enabled){
     document.getElementById('google-login-wrap').style.display='block';
     document.getElementById('admin-google-btn').style.display='block';
+    document.getElementById('home-cards').style.display='none';
+    document.getElementById('home-signin').style.display='block';
   }
   const qs=new URLSearchParams(location.search);
   if(qs.has('pin')){ history.replaceState({},'',location.pathname); goAdminPinLogin(); return; }
@@ -2055,12 +2078,8 @@ async function refreshSecuritySettings(){
       : '<div style="font-size:13px;color:var(--gray-400);">Restriction is <b>OFF</b> — anyone with the link can open this site.</div>';
     if(cfg.google_enabled){
       document.getElementById('google-settings-card').style.display='block';
-      let html='';
-      if((cfg.admin_emails||[]).length) html+='Built-in admin: <b>'+cfg.admin_emails.join('</b>, <b>')+'</b><br>';
-      html+=cfg.admin_google_email
-        ? 'Extra connected admin: <b>'+cfg.admin_google_email+'</b>'
-        : 'No extra admin account connected.';
-      document.getElementById('admin-google-status').innerHTML=html;
+      document.getElementById('admin-google-status').innerHTML=
+        'Admin sign-in locked to: <b>'+(cfg.admin_emails||[]).join('</b>, <b>')+'</b>';
     }
   }catch(e){}
 }

@@ -90,6 +90,7 @@ def init_db():
         ('daily_rate',      'REAL NOT NULL DEFAULT 0'),
         ('google_email',    'TEXT'),
         ('birth_year',      'INTEGER'),
+        ('role',            "TEXT NOT NULL DEFAULT 'subcontractor'"),
     ]:
         try:
             c.execute(f'ALTER TABLE employees ADD COLUMN {col} {definition}')
@@ -309,9 +310,9 @@ def google_callback():
     c = get_db()
     if mode == 'connect':
         if is_admin():
-            set_setting(c, 'admin_google_email', email)
+            # Admin accounts are fixed via ADMIN_EMAILS — nothing to connect
             c.close()
-            return redirect('/?glogin=connected')
+            return redirect('/?glogin=admin')
         eid = current_emp_id()
         if not eid:
             c.close()
@@ -325,9 +326,8 @@ def google_callback():
         c.close()
         return redirect('/?glogin=connected')
 
-    # mode == 'login'
-    admin_email = get_setting(c, 'admin_google_email').lower()
-    if email in ADMIN_EMAILS or (admin_email and email == admin_email):
+    # mode == 'login' — admin is strictly limited to ADMIN_EMAILS
+    if email in ADMIN_EMAILS:
         c.close()
         keep_bypass = session.get('ip_bypass')
         session.clear()
@@ -344,10 +344,23 @@ def google_callback():
     keep_bypass = session.get('ip_bypass')
     session.clear()
     session['emp_id']   = emp['id']
-    session['is_admin'] = False
+    session['is_admin'] = (emp['role'] == 'admin')   # role granted by the master admin
     if keep_bypass:
         session['ip_bypass'] = True
-    return redirect('/?glogin=emp')
+    return redirect('/?glogin=admin' if session['is_admin'] else '/?glogin=emp')
+
+@app.route('/api/employees/<eid>/role', methods=['PUT'])
+def set_role(eid):
+    if not is_admin():
+        return jsonify({'error': 'Admin only'}), 403
+    role = ((request.json or {}).get('role') or '').strip()
+    if role not in ('admin', 'subcontractor'):
+        return jsonify({'error': 'Role must be admin or subcontractor'}), 400
+    c = get_db()
+    c.execute('UPDATE employees SET role=? WHERE id=?', (role, eid))
+    c.commit()
+    c.close()
+    return jsonify({'ok': True})
 
 @app.route('/api/google-signup', methods=['POST'])
 def google_signup():
@@ -425,16 +438,10 @@ def merge_employees():
 @app.route('/api/config')
 def app_config():
     role = 'admin' if is_admin() else ('employee' if current_emp_id() else None)
-    admin_google = ''
-    if db_configured() and is_admin():
-        c = get_db()
-        admin_google = get_setting(c, 'admin_google_email')
-        c.close()
     return jsonify({
         'google_enabled': google_enabled(),
         'role': role,
         'my_ip': client_ip(),
-        'admin_google_email': admin_google,
         'admin_emails': sorted(ADMIN_EMAILS) if is_admin() else [],
     })
 
@@ -519,7 +526,7 @@ def list_employees():
     if not is_admin():
         return jsonify({'error': 'Admin only'}), 403
     c = get_db()
-    rows = c.execute('SELECT id, name, hourly_rate, daily_rate, regular_hours, daily_hours, allowance, allowance_type, plain_password, google_email, birth_year, (password_hash IS NOT NULL) as has_password FROM employees ORDER BY name').fetchall()
+    rows = c.execute('SELECT id, name, hourly_rate, daily_rate, regular_hours, daily_hours, allowance, allowance_type, plain_password, google_email, birth_year, role, (password_hash IS NOT NULL) as has_password FROM employees ORDER BY name').fetchall()
     c.close()
     return jsonify([dict(r) for r in rows])
 
@@ -933,6 +940,9 @@ def delete_payment(pid):
 # ── Admin session ──────────────────────────────────────────────────────────
 @app.route('/api/admin-login', methods=['POST'])
 def admin_login():
+    if google_enabled():
+        # Admin access is locked to the Google accounts in ADMIN_EMAILS
+        return jsonify({'error': 'PIN login is disabled — use “Sign in with Google”'}), 403
     d = request.json or {}
     pin = d.get('pin', '')
     c = get_db()
