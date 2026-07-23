@@ -1,78 +1,80 @@
-from flask import Flask, jsonify, request, render_template, session
-import sqlite3, os, uuid, hashlib
+from flask import Flask, jsonify, request, render_template, session, redirect
+import os, uuid, hashlib, secrets, time, json
+import urllib.request, urllib.parse
 from datetime import datetime, timezone, timedelta
+
+from db import Db, db_configured
 
 # Always use Philippine Time (UTC+8) regardless of server OS timezone
 PH = timezone(timedelta(hours=8))
 
 app = Flask(__name__)
-app.secret_key = 'timetrack-local-secret-2024'   # used for session cookies
+app.secret_key = os.environ.get('SECRET_KEY', 'timetrack-local-secret-2024')
 app.config['TEMPLATES_AUTO_RELOAD'] = True        # always serve latest template
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'timetracker.db')
+GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '').strip()
 
 # ── Database ──────────────────────────────────────────────────────────────
 def get_db():
-    c = sqlite3.connect(DB)
-    c.row_factory = sqlite3.Row
-    return c
+    return Db()
+
+SCHEMA = [
+    '''CREATE TABLE IF NOT EXISTS employees (
+        id               TEXT PRIMARY KEY,
+        name             TEXT NOT NULL,
+        hourly_rate      REAL NOT NULL DEFAULT 0,
+        regular_hours    INTEGER NOT NULL DEFAULT 40,
+        allowance        REAL NOT NULL DEFAULT 0,
+        allowance_type   TEXT NOT NULL DEFAULT 'weekly',
+        password_hash    TEXT
+    )''',
+    '''CREATE TABLE IF NOT EXISTS entries (
+        id          TEXT PRIMARY KEY,
+        employee_id TEXT NOT NULL,
+        clock_in    TEXT NOT NULL,
+        clock_out   TEXT
+    )''',
+    '''CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    )''',
+    '''CREATE TABLE IF NOT EXISTS weekly_adjustments (
+        id          TEXT PRIMARY KEY,
+        employee_id TEXT NOT NULL,
+        week_start  TEXT NOT NULL,
+        bonus       REAL NOT NULL DEFAULT 0,
+        notes       TEXT NOT NULL DEFAULT '',
+        UNIQUE(employee_id, week_start)
+    )''',
+    '''CREATE TABLE IF NOT EXISTS breaks (
+        id          TEXT PRIMARY KEY,
+        entry_id    TEXT NOT NULL,
+        employee_id TEXT NOT NULL,
+        break_start TEXT NOT NULL,
+        break_end   TEXT
+    )''',
+    '''CREATE TABLE IF NOT EXISTS payments (
+        id          TEXT PRIMARY KEY,
+        employee_id TEXT NOT NULL,
+        week_label  TEXT NOT NULL,
+        week_start  TEXT NOT NULL,
+        week_end    TEXT NOT NULL,
+        amount      REAL NOT NULL DEFAULT 0,
+        status      TEXT NOT NULL DEFAULT 'pending',
+        paid_date   TEXT,
+        notes       TEXT NOT NULL DEFAULT ''
+    )''',
+    "INSERT INTO settings VALUES ('pin','1234')    ON CONFLICT(key) DO NOTHING",
+    "INSERT INTO settings VALUES ('ot_mult','1.5') ON CONFLICT(key) DO NOTHING",
+]
 
 def init_db():
     c = get_db()
-    c.executescript('''
-        CREATE TABLE IF NOT EXISTS employees (
-            id               TEXT PRIMARY KEY,
-            name             TEXT NOT NULL,
-            hourly_rate      REAL NOT NULL DEFAULT 0,
-            regular_hours    INTEGER NOT NULL DEFAULT 40,
-            allowance        REAL NOT NULL DEFAULT 0,
-            allowance_type   TEXT NOT NULL DEFAULT 'weekly',
-            password_hash    TEXT
-        );
-        CREATE TABLE IF NOT EXISTS entries (
-            id          TEXT PRIMARY KEY,
-            employee_id TEXT NOT NULL,
-            clock_in    TEXT NOT NULL,
-            clock_out   TEXT,
-            FOREIGN KEY (employee_id) REFERENCES employees(id)
-        );
-        CREATE TABLE IF NOT EXISTS settings (
-            key   TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS weekly_adjustments (
-            id          TEXT PRIMARY KEY,
-            employee_id TEXT NOT NULL,
-            week_start  TEXT NOT NULL,
-            bonus       REAL NOT NULL DEFAULT 0,
-            notes       TEXT NOT NULL DEFAULT '',
-            UNIQUE(employee_id, week_start),
-            FOREIGN KEY (employee_id) REFERENCES employees(id)
-        );
-        CREATE TABLE IF NOT EXISTS breaks (
-            id          TEXT PRIMARY KEY,
-            entry_id    TEXT NOT NULL,
-            employee_id TEXT NOT NULL,
-            break_start TEXT NOT NULL,
-            break_end   TEXT,
-            FOREIGN KEY (entry_id)    REFERENCES entries(id),
-            FOREIGN KEY (employee_id) REFERENCES employees(id)
-        );
-        CREATE TABLE IF NOT EXISTS payments (
-            id          TEXT PRIMARY KEY,
-            employee_id TEXT NOT NULL,
-            week_label  TEXT NOT NULL,
-            week_start  TEXT NOT NULL,
-            week_end    TEXT NOT NULL,
-            amount      REAL NOT NULL DEFAULT 0,
-            status      TEXT NOT NULL DEFAULT 'pending',
-            paid_date   TEXT,
-            notes       TEXT NOT NULL DEFAULT '',
-            FOREIGN KEY (employee_id) REFERENCES employees(id)
-        );
-        INSERT OR IGNORE INTO settings VALUES ('pin',    '1234');
-        INSERT OR IGNORE INTO settings VALUES ('ot_mult','1.5');
-    ''')
+    for stmt in SCHEMA:
+        c.execute(stmt)
+        c.commit()
     # Migrate existing DBs — add columns if missing
     for col, definition in [
         ('password_hash',  'TEXT'),
@@ -81,14 +83,23 @@ def init_db():
         ('daily_hours',     'REAL NOT NULL DEFAULT 8'),
         ('plain_password',  "TEXT NOT NULL DEFAULT '1234'"),
         ('daily_rate',      'REAL NOT NULL DEFAULT 0'),
+        ('google_email',    'TEXT'),
     ]:
         try:
             c.execute(f'ALTER TABLE employees ADD COLUMN {col} {definition}')
             c.commit()
         except Exception:
-            pass
+            c.rollback()
     c.commit()
     c.close()
+
+_db_ready = False
+def ensure_db():
+    global _db_ready
+    if _db_ready or not db_configured():
+        return
+    init_db()
+    _db_ready = True
 
 def uid():
     return uuid.uuid4().hex[:16]
@@ -119,6 +130,233 @@ def is_admin():
 def current_emp_id():
     return session.get('emp_id')
 
+def get_setting(c, key, default=''):
+    row = c.execute('SELECT value FROM settings WHERE key=?', (key,)).fetchone()
+    return row['value'] if row else default
+
+def set_setting(c, key, value):
+    c.execute('INSERT INTO settings VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+              (key, str(value)))
+    c.commit()
+
+# ── IP restriction ─────────────────────────────────────────────────────────
+def client_ip():
+    xf = request.headers.get('X-Forwarded-For', '')
+    if xf:
+        return xf.split(',')[0].strip()
+    return request.headers.get('X-Real-Ip') or request.remote_addr or ''
+
+def allowed_ips():
+    ips = []
+    if db_configured():
+        try:
+            c = get_db()
+            ips += [i.strip() for i in get_setting(c, 'allowed_ips').split(',') if i.strip()]
+            c.close()
+        except Exception:
+            pass
+    ips += [i.strip() for i in os.environ.get('ALLOWED_IPS', '').split(',') if i.strip()]
+    return ips
+
+IP_EXEMPT_PATHS = ('/api/ip-status', '/api/ip-unlock')
+
+@app.before_request
+def gate():
+    if not db_configured():
+        # No database yet → let the setup page render, block data APIs
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Database not configured yet'}), 503
+        return None
+    ensure_db()
+    if request.path in IP_EXEMPT_PATHS:
+        return None
+    ips = allowed_ips()
+    if not ips:                       # restriction not enabled
+        return None
+    if session.get('ip_bypass'):
+        return None
+    if client_ip() in ips:
+        return None
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Access restricted: your network is not allowed'}), 403
+    return BLOCKED_PAGE, 403
+
+@app.route('/api/ip-status')
+def ip_status():
+    ips = allowed_ips()
+    return jsonify({
+        'ip': client_ip(),
+        'restricted': bool(ips),
+        'allowed': (not ips) or session.get('ip_bypass') is True or client_ip() in ips,
+        'allowed_ips': ips if is_admin() else [],
+    })
+
+@app.route('/api/ip-unlock', methods=['POST'])
+def ip_unlock():
+    # Emergency door: the admin PIN lets the owner back in when their IP changes
+    d = request.json or {}
+    c = get_db()
+    stored_pin = get_setting(c, 'pin', '1234')
+    if d.get('pin', '') != stored_pin:
+        c.close()
+        time.sleep(0.8)               # slow down PIN guessing
+        return jsonify({'error': 'Incorrect PIN'}), 401
+    session['ip_bypass'] = True
+    if d.get('remember'):
+        ips = [i.strip() for i in get_setting(c, 'allowed_ips').split(',') if i.strip()]
+        me = client_ip()
+        if me and me not in ips:
+            ips.append(me)
+            set_setting(c, 'allowed_ips', ','.join(ips))
+    c.close()
+    return jsonify({'ok': True})
+
+BLOCKED_PAGE = '''<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrackPH — Access Restricted</title>
+<style>body{font-family:system-ui,sans-serif;background:#f8fafc;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}
+.card{background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:36px 28px;max-width:380px;width:100%;text-align:center}
+h1{font-size:20px;margin:12px 0 6px}p{color:#64748b;font-size:14px;line-height:1.5}
+input{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;text-align:center;letter-spacing:6px;box-sizing:border-box;margin:10px 0}
+button{width:100%;padding:11px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+label{display:flex;gap:8px;align-items:center;justify-content:center;font-size:13px;color:#64748b;margin:10px 0}
+#err{color:#dc2626;font-size:13px;min-height:18px;margin-top:8px}</style></head><body>
+<div class="card"><div style="font-size:40px">🔒</div><h1>Access Restricted</h1>
+<p>TrackPH is locked to the office network. Connect to the office Wi‑Fi / internet and reload this page.</p>
+<p style="font-size:12px;color:#94a3b8">Admin? Enter your PIN to unlock from this network.</p>
+<input id="pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+<label><input id="rem" type="checkbox" style="width:auto;letter-spacing:0"> Also allow this IP from now on</label>
+<button onclick="go()">Unlock</button><div id="err"></div></div>
+<script>async function go(){
+ const r=await fetch('/api/ip-unlock',{method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({pin:document.getElementById('pin').value,remember:document.getElementById('rem').checked})});
+ if(r.ok){location.href='/';}else{document.getElementById('err').textContent='Incorrect PIN.';}
+}
+document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')go()});</script>
+</body></html>'''
+
+# ── Google OAuth ───────────────────────────────────────────────────────────
+def google_enabled():
+    return bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+
+def external_base():
+    host = request.host
+    scheme = 'http' if host.startswith(('localhost', '127.')) else 'https'
+    return f'{scheme}://{host}'
+
+@app.route('/auth/google/start')
+def google_start():
+    if not google_enabled():
+        return redirect('/?glogin=error&reason=notconfigured')
+    mode = request.args.get('mode', 'login')
+    if mode == 'connect' and not (is_admin() or current_emp_id()):
+        return redirect('/?glogin=error&reason=session')
+    state = secrets.token_urlsafe(16)
+    session['oauth_state'] = state
+    session['oauth_mode']  = mode
+    params = urllib.parse.urlencode({
+        'client_id':     GOOGLE_CLIENT_ID,
+        'redirect_uri':  external_base() + '/auth/google/callback',
+        'response_type': 'code',
+        'scope':         'openid email profile',
+        'state':         state,
+        'prompt':        'select_account',
+    })
+    return redirect('https://accounts.google.com/o/oauth2/v2/auth?' + params)
+
+def _http_post_form(url, data):
+    req = urllib.request.Request(url, data=urllib.parse.urlencode(data).encode(),
+                                 headers={'Content-Type': 'application/x-www-form-urlencoded'})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read().decode())
+
+def _http_get_json(url, token):
+    req = urllib.request.Request(url, headers={'Authorization': 'Bearer ' + token})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read().decode())
+
+@app.route('/auth/google/callback')
+def google_callback():
+    if request.args.get('error') or not request.args.get('code'):
+        return redirect('/?glogin=error&reason=denied')
+    if request.args.get('state') != session.get('oauth_state'):
+        return redirect('/?glogin=error&reason=state')
+    mode = session.pop('oauth_mode', 'login')
+    session.pop('oauth_state', None)
+
+    try:
+        tok = _http_post_form('https://oauth2.googleapis.com/token', {
+            'code':          request.args['code'],
+            'client_id':     GOOGLE_CLIENT_ID,
+            'client_secret': GOOGLE_CLIENT_SECRET,
+            'redirect_uri':  external_base() + '/auth/google/callback',
+            'grant_type':    'authorization_code',
+        })
+        info = _http_get_json('https://openidconnect.googleapis.com/v1/userinfo', tok['access_token'])
+    except Exception:
+        return redirect('/?glogin=error&reason=google')
+
+    email = (info.get('email') or '').lower().strip()
+    if not email or not info.get('email_verified', True):
+        return redirect('/?glogin=error&reason=noemail')
+
+    c = get_db()
+    if mode == 'connect':
+        if is_admin():
+            set_setting(c, 'admin_google_email', email)
+            c.close()
+            return redirect('/?glogin=connected')
+        eid = current_emp_id()
+        if not eid:
+            c.close()
+            return redirect('/?glogin=error&reason=session')
+        taken = c.execute('SELECT id FROM employees WHERE lower(google_email)=? AND id<>?', (email, eid)).fetchone()
+        if taken:
+            c.close()
+            return redirect('/?glogin=error&reason=taken')
+        c.execute('UPDATE employees SET google_email=? WHERE id=?', (email, eid))
+        c.commit()
+        c.close()
+        return redirect('/?glogin=connected')
+
+    # mode == 'login'
+    admin_email = get_setting(c, 'admin_google_email').lower()
+    if admin_email and email == admin_email:
+        c.close()
+        keep_bypass = session.get('ip_bypass')
+        session.clear()
+        session['is_admin'] = True
+        if keep_bypass:
+            session['ip_bypass'] = True
+        return redirect('/?glogin=admin')
+    emp = c.execute('SELECT * FROM employees WHERE lower(google_email)=?', (email,)).fetchone()
+    c.close()
+    if not emp:
+        return redirect('/?glogin=error&reason=notlinked')
+    keep_bypass = session.get('ip_bypass')
+    session.clear()
+    session['emp_id']   = emp['id']
+    session['is_admin'] = False
+    if keep_bypass:
+        session['ip_bypass'] = True
+    return redirect('/?glogin=emp')
+
+# ── App config / session info ──────────────────────────────────────────────
+@app.route('/api/config')
+def app_config():
+    role = 'admin' if is_admin() else ('employee' if current_emp_id() else None)
+    admin_google = ''
+    if db_configured() and is_admin():
+        c = get_db()
+        admin_google = get_setting(c, 'admin_google_email')
+        c.close()
+    return jsonify({
+        'google_enabled': google_enabled(),
+        'role': role,
+        'my_ip': client_ip(),
+        'admin_google_email': admin_google,
+    })
+
 # ── Auth ───────────────────────────────────────────────────────────────────
 @app.route('/api/employee-login', methods=['POST'])
 def employee_login():
@@ -138,14 +376,20 @@ def employee_login():
     if not check_password(emp, password):
         return jsonify({'error': 'Incorrect password'}), 401
 
+    keep_bypass = session.get('ip_bypass')
     session.clear()
+    if keep_bypass:
+        session['ip_bypass'] = True
     session['emp_id']   = emp['id']
     session['is_admin'] = False
-    return jsonify({'id': emp['id'], 'name': emp['name'], 'regular_hours': emp['regular_hours'], 'daily_hours': emp['daily_hours'], 'allowance': emp['allowance'], 'allowance_type': emp['allowance_type']})
+    return jsonify({'id': emp['id'], 'name': emp['name'], 'regular_hours': emp['regular_hours'], 'daily_hours': emp['daily_hours'], 'allowance': emp['allowance'], 'allowance_type': emp['allowance_type'], 'google_email': emp['google_email']})
 
 @app.route('/api/employee-logout', methods=['POST'])
 def employee_logout():
+    keep_bypass = session.get('ip_bypass')
     session.clear()
+    if keep_bypass:
+        session['ip_bypass'] = True
     return jsonify({'ok': True})
 
 @app.route('/api/me')
@@ -154,7 +398,7 @@ def get_me():
     if not eid:
         return jsonify({'error': 'Not logged in'}), 401
     c = get_db()
-    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance FROM employees WHERE id=?', (eid,)).fetchone()
+    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email FROM employees WHERE id=?', (eid,)).fetchone()
     c.close()
     if not emp:
         return jsonify({'error': 'Employee not found'}), 404
@@ -194,7 +438,7 @@ def list_employees():
     if not is_admin():
         return jsonify({'error': 'Admin only'}), 403
     c = get_db()
-    rows = c.execute('SELECT id, name, hourly_rate, daily_rate, regular_hours, daily_hours, allowance, allowance_type, plain_password, (password_hash IS NOT NULL) as has_password FROM employees ORDER BY name').fetchall()
+    rows = c.execute('SELECT id, name, hourly_rate, daily_rate, regular_hours, daily_hours, allowance, allowance_type, plain_password, google_email, (password_hash IS NOT NULL) as has_password FROM employees ORDER BY name').fetchall()
     c.close()
     return jsonify([dict(r) for r in rows])
 
@@ -420,7 +664,7 @@ def save_settings():
     d = request.json or {}
     c = get_db()
     for k, v in d.items():
-        c.execute('INSERT OR REPLACE INTO settings VALUES (?,?)', (k, str(v)))
+        c.execute('INSERT INTO settings VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', (k, str(v)))
     c.commit()
     c.close()
     return jsonify({'ok': True})
@@ -616,18 +860,42 @@ def admin_login():
     stored_pin = row['value'] if row else '1234'
     if pin != stored_pin:
         return jsonify({'error': 'Incorrect PIN'}), 401
+    keep_bypass = session.get('ip_bypass')
     session.clear()
+    if keep_bypass:
+        session['ip_bypass'] = True
     session['is_admin'] = True
     return jsonify({'ok': True})
 
 @app.route('/api/admin-logout', methods=['POST'])
 def admin_logout():
+    keep_bypass = session.get('ip_bypass')
     session.clear()
+    if keep_bypass:
+        session['ip_bypass'] = True
     return jsonify({'ok': True})
 
 # ── Serve frontend ─────────────────────────────────────────────────────────
+SETUP_PAGE = '''<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>TrackPH — Setup</title>
+<style>body{font-family:system-ui,sans-serif;background:#f8fafc;margin:0;padding:40px 20px;color:#0f172a}
+.card{background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:32px;max-width:640px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}p{color:#64748b;font-size:14px;line-height:1.6}
+ol{padding-left:20px}li{margin:10px 0;font-size:14px;line-height:1.6}
+code{background:#f1f5f9;padding:2px 6px;border-radius:6px;font-size:13px}</style></head><body>
+<div class="card"><h1>⏱ TrackPH — almost ready!</h1>
+<p>The app is deployed, but it still needs a database. One-time setup:</p>
+<ol>
+<li>In your <b>Vercel dashboard</b> open this project → <b>Storage</b> tab → <b>Create Database</b> → choose <b>Neon (Postgres)</b> (free plan) → Connect. This automatically adds the <code>DATABASE_URL</code> environment variable.</li>
+<li>(Optional, for Google sign-in) add env vars <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code> from Google Cloud Console.</li>
+<li>Go to <b>Deployments</b> → ⋯ menu on the latest deployment → <b>Redeploy</b>.</li>
+</ol>
+<p>After redeploying, reload this page — the app will create its tables automatically.</p></div></body></html>'''
+
 @app.route('/')
 def index():
+    if not db_configured():
+        return SETUP_PAGE
     return render_template('index.html')
 
 # ── Start ──────────────────────────────────────────────────────────────────

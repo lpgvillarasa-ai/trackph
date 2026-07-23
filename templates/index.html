@@ -289,6 +289,14 @@
         Default password is <strong>1234</strong> — ask admin if you don't know yours.
       </div>
       <button id="login-btn" class="btn btn-primary btn-full" onclick="doEmpLogin()">Log In</button>
+      <div id="google-login-wrap" style="display:none;">
+        <div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--gray-400);font-size:12px;">
+          <div style="flex:1;height:1px;background:var(--gray-200);"></div>or<div style="flex:1;height:1px;background:var(--gray-200);"></div>
+        </div>
+        <button class="btn btn-full" style="background:#fff;border:1px solid var(--gray-300);color:var(--gray-700);font-weight:600;" onclick="location.href='/auth/google/start?mode=login'">
+          <svg width="18" height="18" viewBox="0 0 48 48" style="margin-right:8px;vertical-align:-3px;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continue with Google
+        </button>
+      </div>
       <button class="btn btn-ghost btn-full" style="margin-top:8px;" onclick="showPage('page-home')">← Back</button>
     </div>
   </div>
@@ -300,6 +308,7 @@
     <div class="topbar-logo"><span class="topbar-logo-dot"></span>TrackPH</div>
     <div style="display:flex;gap:8px;align-items:center;">
       <span id="topbar-emp-name" style="font-size:13px;color:var(--gray-500);font-weight:500;"></span>
+      <button id="emp-google-btn" class="btn btn-ghost btn-sm" style="display:none;" onclick="location.href='/auth/google/start?mode=connect'">🔗 Connect Google</button>
       <button class="btn btn-ghost btn-sm" onclick="openChangePasswordModal()">🔑 Password</button>
       <button class="btn btn-ghost btn-sm" onclick="doEmpLogout()">Sign Out</button>
     </div>
@@ -372,6 +381,7 @@
       <div class="pin-key" onclick="pinKey('0')">0</div>
       <div class="pin-key" onclick="pinBack()">⌫</div>
     </div>
+    <button id="admin-google-btn" class="btn btn-full" style="display:none;margin-top:16px;background:#fff;border:1px solid var(--gray-300);color:var(--gray-700);font-weight:600;" onclick="location.href='/auth/google/start?mode=login'">Sign in with Google</button>
     <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="showPage('page-home')">← Back</button>
   </div>
 </div>
@@ -532,6 +542,22 @@
             <div class="card-title">Overtime Multiplier</div>
             <div class="form-group"><label>Multiplier (e.g. 1.5 = time and a half)</label><input type="number" id="s-ot-mult" step="0.1" min="1" max="3" /></div>
             <button class="btn btn-primary" onclick="saveOtMult()">Save</button>
+          </div>
+          <div class="card" id="google-settings-card" style="display:none;">
+            <div class="card-title">Google Sign-In (Admin)</div>
+            <div id="admin-google-status" style="font-size:13px;color:var(--gray-500);margin-bottom:12px;">Not connected.</div>
+            <button class="btn btn-primary" onclick="location.href='/auth/google/start?mode=connect'">🔗 Connect my Google account</button>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:8px;">Once connected, you can open the admin dashboard by signing in with this Google account — no PIN needed.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">IP Access Restriction</div>
+            <div style="font-size:13px;color:var(--gray-500);margin-bottom:6px;">Your current IP: <strong id="ip-current" style="color:var(--gray-700);">—</strong></div>
+            <div style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">When enabled, only devices on the allowed IPs (e.g. your office internet connection) can open TrackPH. If your IP changes, unlock with your admin PIN from the blocked page.</div>
+            <div id="ip-list" style="margin-bottom:12px;"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="allowMyIp()">➕ Allow my current IP</button>
+              <button class="btn btn-ghost btn-sm" id="ip-clear-btn" style="display:none;" onclick="clearAllowedIps()">Disable restriction</button>
+            </div>
           </div>
         </div>
       </div>
@@ -859,6 +885,8 @@ async function renderEmployeeDashboard(){
   const emp=currentEmp;
 
   document.getElementById('topbar-emp-name').textContent = emp.name;
+  const gbtn=document.getElementById('emp-google-btn');
+  gbtn.style.display=(APP_CFG.google_enabled&&!emp.google_email)?'inline-flex':'none';
   const av=document.getElementById('emp-avatar');
   av.style.background=avatarColor(emp.name); av.textContent=initials(emp.name);
   document.getElementById('emp-name').textContent=emp.name;
@@ -1207,6 +1235,7 @@ async function loadAdminData(){
   empCache=emps;
   document.getElementById('s-ot-mult').value=s.ot_mult||1.5;
   renderPayroll(); renderTeam(); renderTimelog();
+  refreshSecuritySettings();
 }
 
 function switchTab(name){
@@ -1843,7 +1872,95 @@ function printTimelog(){
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 const DEFAULT_PW='1234';
+let APP_CFG={google_enabled:false,role:null};
 loadLoginDropdown(); // pre-load employee names for login dropdown
+initApp();
+
+async function initApp(){
+  try{ APP_CFG=await GET('/config'); }catch(e){}
+  if(APP_CFG.google_enabled){
+    document.getElementById('google-login-wrap').style.display='block';
+    document.getElementById('admin-google-btn').style.display='block';
+  }
+  const qs=new URLSearchParams(location.search);
+  const gl=qs.get('glogin');
+  if(!gl) return;
+  const reason=qs.get('reason');
+  history.replaceState({},'',location.pathname);
+  const reasons={
+    notlinked:'This Google account is not linked yet. Log in with your password first, then tap “Connect Google”.',
+    taken:'That Google account is already linked to another profile.',
+    denied:'Google sign-in was cancelled.',
+    state:'Sign-in expired — please try again.',
+    google:'Could not reach Google. Please try again.',
+    session:'Please log in first, then connect your Google account.',
+    noemail:'Google did not share a verified email address.',
+    notconfigured:'Google sign-in is not set up yet.'
+  };
+  if(gl==='error'){ showToast('⚠️ '+(reasons[reason]||'Google sign-in failed.'),5000); return; }
+  if(gl==='admin'||(gl==='connected'&&APP_CFG.role==='admin')){
+    try{
+      await loadAdminData();
+      showPage('page-admin');
+      showToast(gl==='connected'?'✅ Google account connected!':'✅ Signed in with Google');
+    }catch(e){ showToast('Error: '+e.message); }
+    return;
+  }
+  if(gl==='emp'||(gl==='connected'&&APP_CFG.role==='employee')){
+    try{
+      currentEmp=await GET('/me');
+      showPage('page-employee');
+      renderEmployeeDashboard();
+      showToast(gl==='connected'?'✅ Google account connected!':'✅ Signed in with Google');
+    }catch(e){ showToast('Error: '+e.message); }
+  }
+}
+
+// ─── Security settings (IP lock + Google) ────────────────────────────────────
+async function refreshSecuritySettings(){
+  try{
+    const [st,cfg]=await Promise.all([GET('/ip-status'),GET('/config')]);
+    APP_CFG=cfg;
+    document.getElementById('ip-current').textContent=st.ip||'unknown';
+    const ips=st.allowed_ips||[];
+    document.getElementById('ip-clear-btn').style.display=ips.length?'inline-flex':'none';
+    const list=document.getElementById('ip-list');
+    list.innerHTML=ips.length
+      ? ips.map(ip=>'<span style="display:inline-flex;align-items:center;gap:6px;background:var(--primary-light);color:var(--primary);font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;margin:0 6px 6px 0;">'+ip+
+          '<a style="cursor:pointer;color:var(--red);font-weight:700;" onclick="removeIp(\''+ip+'\')" title="Remove">✕</a></span>').join('')
+      : '<div style="font-size:13px;color:var(--gray-400);">Restriction is <b>OFF</b> — anyone with the link can open this site.</div>';
+    if(cfg.google_enabled){
+      document.getElementById('google-settings-card').style.display='block';
+      document.getElementById('admin-google-status').innerHTML=cfg.admin_google_email
+        ? 'Connected: <b>'+cfg.admin_google_email+'</b>'
+        : 'Not connected.';
+    }
+  }catch(e){}
+}
+async function saveAllowedIps(ips){
+  await PUT('/settings',{allowed_ips:ips.join(',')});
+  await refreshSecuritySettings();
+}
+async function allowMyIp(){
+  try{
+    const st=await GET('/ip-status');
+    if(!st.ip){showToast('Could not detect your IP.');return;}
+    const ips=st.allowed_ips||[];
+    if(!ips.includes(st.ip)) ips.push(st.ip);
+    await saveAllowedIps(ips);
+    showToast('🔒 Site locked to '+st.ip);
+  }catch(e){showToast('Error: '+e.message);}
+}
+async function removeIp(ip){
+  try{
+    const st=await GET('/ip-status');
+    await saveAllowedIps((st.allowed_ips||[]).filter(i=>i!==ip));
+  }catch(e){showToast('Error: '+e.message);}
+}
+async function clearAllowedIps(){
+  try{ await saveAllowedIps([]); showToast('IP restriction disabled'); }
+  catch(e){showToast('Error: '+e.message);}
+}
 // ─── Payments ────────────────────────────────────────────────────────────────
 let editingPaymentId = null;
 
