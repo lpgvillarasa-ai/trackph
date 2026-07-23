@@ -182,7 +182,8 @@ def allowed_ips():
     ips += [i.strip() for i in os.environ.get('ALLOWED_IPS', '').split(',') if i.strip()]
     return ips
 
-IP_EXEMPT_PATHS = ('/api/ip-status', '/api/ip-unlock')
+# Google sign-in must stay reachable so the master admin can log in from anywhere
+IP_EXEMPT_PATHS = ('/api/ip-status', '/api/ip-unlock', '/auth/google/start', '/auth/google/callback')
 
 @app.before_request
 def gate():
@@ -203,6 +204,8 @@ def gate():
                 session['ip_bypass'] = True
         elif request.path not in PASSIVE_PATHS:
             session['last_seen'] = now
+    if session.get('master'):         # the master admin is never IP-restricted
+        return None
     if request.path in IP_EXEMPT_PATHS:
         return None
     ips = allowed_ips()
@@ -214,7 +217,7 @@ def gate():
         return None
     if request.path.startswith('/api/'):
         return jsonify({'error': 'Access restricted: your network is not allowed'}), 403
-    return BLOCKED_PAGE, 403
+    return blocked_page(), 403
 
 @app.route('/api/ip-status')
 def ip_status():
@@ -222,7 +225,7 @@ def ip_status():
     return jsonify({
         'ip': client_ip(),
         'restricted': bool(ips),
-        'allowed': (not ips) or session.get('ip_bypass') is True or client_ip() in ips,
+        'allowed': (not ips) or session.get('ip_bypass') is True or session.get('master') is True or client_ip() in ips,
         'allowed_ips': ips if is_admin() else [],
     })
 
@@ -247,6 +250,15 @@ def ip_unlock():
     c.close()
     return jsonify({'ok': True})
 
+def blocked_page():
+    google_btn = ''
+    if google_enabled():
+        google_btn = ('<div style="margin:16px 0;border-top:1px solid #e2e8f0;padding-top:16px">'
+                      '<p style="font-size:12px;color:#94a3b8;margin:0 0 10px">Owner? Sign in from anywhere:</p>'
+                      '<button style="background:#fff;color:#334155;border:1px solid #cbd5e1" '
+                      'onclick="location.href=\'/auth/google/start?mode=login\'">Sign in with Google</button></div>')
+    return BLOCKED_PAGE.replace('<!--GOOGLE-->', google_btn)
+
 BLOCKED_PAGE = '''<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TrackPH — Access Restricted</title>
@@ -259,6 +271,7 @@ label{display:flex;gap:8px;align-items:center;justify-content:center;font-size:1
 #err{color:#dc2626;font-size:13px;min-height:18px;margin-top:8px}</style></head><body>
 <div class="card"><div style="font-size:40px">🔒</div><h1>Access Restricted</h1>
 <p>TrackPH is locked to the office network. Connect to the office Wi‑Fi / internet and reload this page.</p>
+<!--GOOGLE-->
 <p style="font-size:12px;color:#94a3b8">Admin? Enter your PIN to unlock from this network.</p>
 <input id="pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
 <label><input id="rem" type="checkbox" style="width:auto;letter-spacing:0"> Also allow this IP from now on</label>
@@ -358,7 +371,7 @@ def google_callback():
     # mode == 'login' — admin is strictly limited to ADMIN_EMAILS
     if email in ADMIN_EMAILS:
         c.close()
-        start_session(is_admin=True)
+        start_session(is_admin=True, master=True)   # master admin: no IP restriction
         return redirect('/?glogin=admin')
     emp = c.execute('SELECT * FROM employees WHERE lower(google_email)=?', (email,)).fetchone()
     c.close()
@@ -368,6 +381,27 @@ def google_callback():
         return redirect('/?glogin=new&name=' + urllib.parse.quote(info.get('name', '')))
     start_session(emp_id=emp['id'], is_admin=(emp['role'] == 'admin'))
     return redirect('/?glogin=admin' if session['is_admin'] else '/?glogin=emp')
+
+@app.route('/api/impersonate', methods=['POST'])
+def impersonate():
+    # Admin "View as subcontractor": adopt an employee identity while staying admin
+    if not is_admin():
+        return jsonify({'error': 'Admin only'}), 403
+    eid = ((request.json or {}).get('employee_id') or '').strip()
+    c = get_db()
+    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year FROM employees WHERE id=?', (eid,)).fetchone()
+    c.close()
+    if not emp:
+        return jsonify({'error': 'Employee not found'}), 404
+    session['emp_id'] = eid
+    return jsonify(dict(emp))
+
+@app.route('/api/impersonate', methods=['DELETE'])
+def stop_impersonate():
+    if not is_admin():
+        return jsonify({'error': 'Admin only'}), 403
+    session.pop('emp_id', None)
+    return jsonify({'ok': True})
 
 @app.route('/api/employees/<eid>/role', methods=['PUT'])
 def set_role(eid):

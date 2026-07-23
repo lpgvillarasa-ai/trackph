@@ -339,9 +339,10 @@
     <div class="topbar-logo"><span class="topbar-logo-dot"></span>TrackPH</div>
     <div style="display:flex;gap:8px;align-items:center;">
       <span id="topbar-emp-name" style="font-size:13px;color:var(--gray-500);font-weight:500;"></span>
+      <button id="back-admin-btn" class="btn btn-sm" style="display:none;background:#fef3c7;color:#b45309;font-weight:700;border:none;" onclick="backToAdmin()">← Back to Admin</button>
       <button id="emp-google-btn" class="btn btn-ghost btn-sm" style="display:none;" onclick="location.href='/auth/google/start?mode=connect'">🔗 Connect Google</button>
-      <button class="btn btn-ghost btn-sm" onclick="openChangePasswordModal()">🔑 Password</button>
-      <button class="btn btn-ghost btn-sm" onclick="doEmpLogout()">Sign Out</button>
+      <button id="emp-pw-btn" class="btn btn-ghost btn-sm" onclick="openChangePasswordModal()">🔑 Password</button>
+      <button id="emp-signout-btn" class="btn btn-ghost btn-sm" onclick="doEmpLogout()">Sign Out</button>
     </div>
   </div>
   <div class="content">
@@ -421,7 +422,10 @@
 <div id="page-admin" class="page">
   <div class="topbar">
     <div class="topbar-logo"><span class="topbar-logo-dot"></span>TrackPH <span class="topbar-badge">Admin</span></div>
-    <button class="btn btn-ghost btn-sm" onclick="doAdminLogout()">Sign Out</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-ghost btn-sm" onclick="openViewAsModal()">👁 View as Subcontractor</button>
+      <button class="btn btn-ghost btn-sm" onclick="doAdminLogout()">Sign Out</button>
+    </div>
   </div>
   <div class="content-wide">
     <div style="max-width:1000px;margin:0 auto;">
@@ -668,6 +672,24 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-reset-pw')">Cancel</button>
       <button id="reset-pw-btn" class="btn btn-primary" onclick="doResetPassword()">Set Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: View as Subcontractor (Admin) -->
+<div id="modal-viewas" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">👁 View as Subcontractor</div>
+    <div style="color:var(--gray-600);font-size:14px;margin-bottom:16px;">
+      See TrackPH exactly as this person does — clock in/out, breaks, hours. Great for testing with a dummy account.
+    </div>
+    <div class="form-group">
+      <label for="viewas-select">Subcontractor</label>
+      <select id="viewas-select"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-viewas')">Cancel</button>
+      <button id="viewas-btn" class="btn btn-primary" onclick="doViewAs()">View</button>
     </div>
   </div>
 </div>
@@ -961,7 +983,11 @@ async function renderEmployeeDashboard(){
 
   document.getElementById('topbar-emp-name').textContent = emp.name;
   const gbtn=document.getElementById('emp-google-btn');
-  gbtn.style.display=(APP_CFG.google_enabled&&!emp.google_email)?'inline-flex':'none';
+  gbtn.style.display=(APP_CFG.google_enabled&&!emp.google_email&&!impersonating)?'inline-flex':'none';
+  // While an admin is "viewing as", swap Sign Out/Password for Back to Admin
+  document.getElementById('back-admin-btn').style.display=impersonating?'inline-flex':'none';
+  document.getElementById('emp-signout-btn').style.display=impersonating?'none':'inline-flex';
+  document.getElementById('emp-pw-btn').style.display=impersonating?'none':'inline-flex';
   const av=document.getElementById('emp-avatar');
   av.style.background=avatarColor(emp.name); av.textContent=initials(emp.name);
   document.getElementById('emp-name').textContent=emp.name;
@@ -1585,6 +1611,36 @@ async function renderTeam(){
         '</div></td></tr>';
     }).join('');
   } catch(e){ showToast('Error: '+e.message); }
+}
+
+// ─── View as subcontractor (admin) ──────────────────────────────────────────
+let impersonating=false;
+function openViewAsModal(){
+  if(!empCache.length){ showToast('Add a subcontractor first (Team tab).'); return; }
+  document.getElementById('viewas-select').innerHTML=
+    empCache.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
+  openModal('modal-viewas');
+}
+async function doViewAs(){
+  const eid=document.getElementById('viewas-select').value;
+  const btn=document.getElementById('viewas-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try{
+    currentEmp=await POST('/impersonate',{employee_id:eid});
+    impersonating=true;
+    closeModal('modal-viewas');
+    showPage('page-employee');
+    renderEmployeeDashboard();
+    showToast('👁 Viewing as '+currentEmp.name+' — use “Back to Admin” to return.');
+  }catch(e){ showToast('Error: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='View'; }
+}
+async function backToAdmin(){
+  clearInterval(timerInterval); clearInterval(statsInterval);
+  try{ await DEL('/impersonate'); }catch(e){}
+  impersonating=false; currentEmp=null;
+  await loadAdminData();
+  showPage('page-admin');
 }
 
 async function setEmpRole(empId, role){
