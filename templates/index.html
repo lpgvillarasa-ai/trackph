@@ -1211,6 +1211,16 @@ function goAdminLogin(){
 function pinKey(k){if(pinBuffer.length>=4)return; pinBuffer+=k; updatePinDisplay(); if(pinBuffer.length===4) setTimeout(checkPin,150);}
 function pinBack(){pinBuffer=pinBuffer.slice(0,-1); updatePinDisplay();}
 function pinClear(){pinBuffer=''; updatePinDisplay();}
+
+// Type the PIN with the keyboard (number row or numpad) when the PIN page is open
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('page-admin-login').classList.contains('active')) return;
+  const t=e.target.tagName;
+  if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT') return;
+  if(/^[0-9]$/.test(e.key)){ pinKey(e.key); e.preventDefault(); }
+  else if(e.key==='Backspace'){ pinBack(); e.preventDefault(); }
+  else if(e.key==='Escape'||e.key==='Delete'){ pinClear(); }
+});
 function updatePinDisplay(){for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled',i<pinBuffer.length);}
 
 async function checkPin(){
