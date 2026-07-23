@@ -302,6 +302,30 @@
   </div>
 </div>
 
+<!-- GOOGLE ONBOARDING (first sign-in) -->
+<div id="page-onboard" class="page" style="align-items:center;justify-content:center;padding:24px;background:var(--gray-50);">
+  <div class="login-box">
+    <div class="login-icon">👋</div>
+    <div class="login-title">Welcome to TrackPH!</div>
+    <div class="login-sub">Your Google account is connected. Just two things to finish setting up:</div>
+    <div class="card">
+      <div class="form-group">
+        <label for="ob-name">Full Name *</label>
+        <input type="text" id="ob-name" placeholder="e.g. Juan dela Cruz" />
+        <div id="ob-name-err" class="ferr">Please enter your full name.</div>
+      </div>
+      <div class="form-group">
+        <label for="ob-year">Year of Birth *</label>
+        <input type="number" id="ob-year" inputmode="numeric" min="1920" max="2020" placeholder="e.g. 1998"
+               onkeydown="if(event.key==='Enter')doGoogleSignup()" />
+        <div id="ob-year-err" class="ferr">Please enter a valid year (e.g. 1998).</div>
+      </div>
+      <button id="ob-btn" class="btn btn-primary btn-full" onclick="doGoogleSignup()">Create my account</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px;" onclick="showPage('page-home')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- EMPLOYEE DASHBOARD -->
 <div id="page-employee" class="page">
   <div class="topbar">
@@ -642,6 +666,29 @@
   </div>
 </div>
 
+<!-- MODAL: Merge Profiles (Admin) -->
+<div id="modal-merge" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">🔀 Merge Profiles</div>
+    <div style="color:var(--gray-600);font-size:14px;margin-bottom:16px;">
+      Combine another profile into <strong id="merge-keep-name"></strong>.
+    </div>
+    <div class="form-group">
+      <label for="merge-from-select">Profile to absorb</label>
+      <select id="merge-from-select"></select>
+      <div style="font-size:11px;color:var(--gray-400);margin-top:6px;">
+        The selected profile's time entries, payments, Google account and birth year move into
+        <span id="merge-keep-name2"></span>, then the selected profile is deleted.
+        Pay rates of <span id="merge-keep-name3"></span> are kept.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-merge')">Cancel</button>
+      <button id="merge-btn" class="btn btn-primary" onclick="doMergeEmployees()">Merge</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Change Own Password (Employee) -->
 <div id="modal-change-pw" class="modal-overlay">
   <div class="modal">
@@ -865,6 +912,28 @@ async function doEmpLogin(){
     document.getElementById('login-password').focus();
   } finally {
     btn.disabled=false; btn.textContent='Log In';
+  }
+}
+
+async function doGoogleSignup(){
+  const name=document.getElementById('ob-name').value.trim();
+  const year=parseInt(document.getElementById('ob-year').value,10);
+  const nameErr=document.getElementById('ob-name-err');
+  const yearErr=document.getElementById('ob-year-err');
+  nameErr.classList.remove('show'); yearErr.classList.remove('show');
+  if(!name){ nameErr.classList.add('show'); return; }
+  if(!year||year<1920||year>2020){ yearErr.classList.add('show'); return; }
+  const btn=document.getElementById('ob-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Creating...';
+  try{
+    currentEmp=await POST('/google-signup',{name,birth_year:year});
+    showPage('page-employee');
+    renderEmployeeDashboard();
+    showToast('🎉 Welcome aboard, '+currentEmp.name.split(' ')[0]+'!');
+  }catch(e){
+    showToast('⚠️ '+e.message,4000);
+  }finally{
+    btn.disabled=false; btn.textContent='Create my account';
   }
 }
 
@@ -1486,7 +1555,12 @@ async function renderTeam(){
     tbody.innerHTML=emps.map(emp=>{
       const on=activeIds.has(emp.id);
       return '<tr>'+
-        '<td><div style="display:flex;align-items:center;gap:8px;">'+avDiv(emp.name,32)+'<strong>'+emp.name+'</strong></div></td>'+
+        '<td><div style="display:flex;align-items:center;gap:8px;">'+avDiv(emp.name,32)+
+          '<div><strong>'+emp.name+'</strong>'+
+          ((emp.google_email||emp.birth_year)?'<div style="font-size:11px;color:var(--gray-400);">'+
+            (emp.google_email?'🔗 '+emp.google_email:'')+
+            (emp.birth_year?(emp.google_email?' · ':'')+'b. '+emp.birth_year:'')+'</div>':'')+
+          '</div></div></td>'+
         '<td>PHP '+(emp.daily_rate||0).toFixed(2)+'/day</td>'+
         '<td>PHP '+(emp.hourly_rate||0).toFixed(2)+'/hr · '+otMult+'x</td>'+
         '<td>'+(emp.daily_hours||8)+'h/day</td>'+
@@ -1495,11 +1569,40 @@ async function renderTeam(){
         '<td>'+(on?'<span class="badge badge-green">● Active</span>':'<span class="badge badge-gray">Offline</span>')+'</td>'+
         '<td><div style="display:flex;gap:8px;">'+
           '<button class="btn btn-ghost btn-sm" onclick="openEditEmpModal(\''+emp.id+'\')">Edit</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="openMergeModal(\''+emp.id+'\')">🔀 Merge</button>'+
           '<button class="btn btn-danger btn-sm" onclick="confirmDeleteEmp(\''+emp.id+'\')">Delete</button>'+
           (on?'<button class="btn btn-sm" style="background:var(--red);color:white;font-weight:700;border:none;" onclick="adminClockOut(\''+emp.id+'\')">⏏ Force Out</button>':'')+
         '</div></td></tr>';
     }).join('');
   } catch(e){ showToast('Error: '+e.message); }
+}
+
+// ─── Merge profiles ─────────────────────────────────────────────────────────
+let mergeKeepId='';
+function openMergeModal(keepId){
+  mergeKeepId=keepId;
+  const keep=empCache.find(e=>e.id===keepId);
+  if(!keep) return;
+  const others=empCache.filter(e=>e.id!==keepId);
+  if(!others.length){ showToast('No other profile to merge with.'); return; }
+  ['merge-keep-name','merge-keep-name2','merge-keep-name3'].forEach(id=>document.getElementById(id).textContent=keep.name);
+  document.getElementById('merge-from-select').innerHTML=
+    '<option value="">— Select profile —</option>'+
+    others.map(e=>'<option value="'+e.id+'">'+e.name+(e.google_email?' (🔗 '+e.google_email+')':'')+'</option>').join('');
+  openModal('modal-merge');
+}
+async function doMergeEmployees(){
+  const removeId=document.getElementById('merge-from-select').value;
+  if(!removeId){ showToast('Select a profile to merge.'); return; }
+  const btn=document.getElementById('merge-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try{
+    await POST('/merge-employees',{keep_id:mergeKeepId,remove_id:removeId});
+    closeModal('modal-merge');
+    await loadAdminData();
+    showToast('✅ Profiles merged!');
+  }catch(e){ showToast('Error: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='Merge'; }
 }
 
 async function adminClockOut(empId){
@@ -1913,6 +2016,12 @@ async function initApp(){
     notconfigured:'Google sign-in is not set up yet.'
   };
   if(gl==='error'){ showToast('⚠️ '+(reasons[reason]||'Google sign-in failed.'),5000); return; }
+  if(gl==='new'){
+    document.getElementById('ob-name').value=qs.get('name')||'';
+    showPage('page-onboard');
+    setTimeout(()=>document.getElementById(qs.get('name')?'ob-year':'ob-name').focus(),100);
+    return;
+  }
   if(gl==='admin'||(gl==='connected'&&APP_CFG.role==='admin')){
     try{
       await loadAdminData();

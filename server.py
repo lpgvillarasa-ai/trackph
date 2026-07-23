@@ -89,6 +89,7 @@ def init_db():
         ('plain_password',  "TEXT NOT NULL DEFAULT '1234'"),
         ('daily_rate',      'REAL NOT NULL DEFAULT 0'),
         ('google_email',    'TEXT'),
+        ('birth_year',      'INTEGER'),
     ]:
         try:
             c.execute(f'ALTER TABLE employees ADD COLUMN {col} {definition}')
@@ -337,7 +338,9 @@ def google_callback():
     emp = c.execute('SELECT * FROM employees WHERE lower(google_email)=?', (email,)).fetchone()
     c.close()
     if not emp:
-        return redirect('/?glogin=error&reason=notlinked')
+        # New Google account → start self-onboarding (name + birth year)
+        session['pending_google'] = email
+        return redirect('/?glogin=new&name=' + urllib.parse.quote(info.get('name', '')))
     keep_bypass = session.get('ip_bypass')
     session.clear()
     session['emp_id']   = emp['id']
@@ -345,6 +348,78 @@ def google_callback():
     if keep_bypass:
         session['ip_bypass'] = True
     return redirect('/?glogin=emp')
+
+@app.route('/api/google-signup', methods=['POST'])
+def google_signup():
+    email = session.get('pending_google')
+    if not email:
+        return jsonify({'error': 'Please sign in with Google first'}), 401
+    d = request.json or {}
+    name = (d.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    try:
+        birth_year = int(d.get('birth_year') or 0)
+    except (TypeError, ValueError):
+        birth_year = 0
+    this_year = datetime.now(PH).year
+    if birth_year < 1920 or birth_year > this_year - 10:
+        return jsonify({'error': 'Please enter a valid year of birth'}), 400
+
+    c = get_db()
+    if c.execute('SELECT id FROM employees WHERE lower(google_email)=?', (email,)).fetchone():
+        c.close()
+        return jsonify({'error': 'This Google account is already registered'}), 400
+    eid = uid()
+    pw  = secrets.token_urlsafe(8)   # Google-only account; admin can reset if needed
+    c.execute('''INSERT INTO employees (id, name, hourly_rate, daily_rate, regular_hours, daily_hours,
+                                        allowance, allowance_type, password_hash, plain_password,
+                                        google_email, birth_year)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
+              (eid, name, 0, 0, 40, 8, 0, 'weekly', hash_pw(pw), pw, email, birth_year))
+    c.commit()
+    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year FROM employees WHERE id=?', (eid,)).fetchone()
+    c.close()
+    keep_bypass = session.get('ip_bypass')
+    session.clear()
+    if keep_bypass:
+        session['ip_bypass'] = True
+    session['emp_id']   = eid
+    session['is_admin'] = False
+    return jsonify(dict(emp)), 201
+
+@app.route('/api/merge-employees', methods=['POST'])
+def merge_employees():
+    # Move everything from one profile into another, then delete the source.
+    # Used to sync a freshly Google-onboarded profile with an existing one.
+    if not is_admin():
+        return jsonify({'error': 'Admin only'}), 403
+    d = request.json or {}
+    keep_id   = (d.get('keep_id') or '').strip()
+    remove_id = (d.get('remove_id') or '').strip()
+    if not keep_id or not remove_id or keep_id == remove_id:
+        return jsonify({'error': 'Pick two different profiles'}), 400
+    c = get_db()
+    keep   = c.execute('SELECT * FROM employees WHERE id=?', (keep_id,)).fetchone()
+    remove = c.execute('SELECT * FROM employees WHERE id=?', (remove_id,)).fetchone()
+    if not keep or not remove:
+        c.close()
+        return jsonify({'error': 'Profile not found'}), 404
+    # Carry over the Google link and birth year when the kept profile lacks them
+    if remove['google_email'] and not keep['google_email']:
+        c.execute('UPDATE employees SET google_email=? WHERE id=?', (remove['google_email'], keep_id))
+    if remove['birth_year'] and not keep['birth_year']:
+        c.execute('UPDATE employees SET birth_year=? WHERE id=?', (remove['birth_year'], keep_id))
+    # Move time data; drop duplicate weekly adjustments in favor of the kept profile
+    c.execute('''DELETE FROM weekly_adjustments WHERE employee_id=? AND week_start IN
+                 (SELECT week_start FROM weekly_adjustments WHERE employee_id=?)''',
+              (remove_id, keep_id))
+    for table in ('entries', 'breaks', 'weekly_adjustments', 'payments'):
+        c.execute(f'UPDATE {table} SET employee_id=? WHERE employee_id=?', (keep_id, remove_id))
+    c.execute('DELETE FROM employees WHERE id=?', (remove_id,))
+    c.commit()
+    c.close()
+    return jsonify({'ok': True})
 
 # ── App config / session info ──────────────────────────────────────────────
 @app.route('/api/config')
@@ -404,7 +479,7 @@ def get_me():
     if not eid:
         return jsonify({'error': 'Not logged in'}), 401
     c = get_db()
-    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email FROM employees WHERE id=?', (eid,)).fetchone()
+    emp = c.execute('SELECT id, name, hourly_rate, regular_hours, daily_hours, allowance, allowance_type, google_email, birth_year FROM employees WHERE id=?', (eid,)).fetchone()
     c.close()
     if not emp:
         return jsonify({'error': 'Employee not found'}), 404
@@ -444,7 +519,7 @@ def list_employees():
     if not is_admin():
         return jsonify({'error': 'Admin only'}), 403
     c = get_db()
-    rows = c.execute('SELECT id, name, hourly_rate, daily_rate, regular_hours, daily_hours, allowance, allowance_type, plain_password, google_email, (password_hash IS NOT NULL) as has_password FROM employees ORDER BY name').fetchall()
+    rows = c.execute('SELECT id, name, hourly_rate, daily_rate, regular_hours, daily_hours, allowance, allowance_type, plain_password, google_email, birth_year, (password_hash IS NOT NULL) as has_password FROM employees ORDER BY name').fetchall()
     c.close()
     return jsonify([dict(r) for r in rows])
 
