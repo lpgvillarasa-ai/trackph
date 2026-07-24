@@ -2226,7 +2226,7 @@ async function allowMyIp(){
 async function addManualIp(){
   const el=document.getElementById('ip-manual');
   const ip=(el.value||'').trim();
-  if(!/^[0-9a-fA-F.:]{3,45}$/.test(ip)){ showToast('That does not look like a valid IP.'); return; }
+  if(!/^[0-9a-fA-F.:]{3,45}(\/\d{1,3})?$/.test(ip)){ showToast('That does not look like a valid IP or range.'); return; }
   try{
     const st=await GET('/ip-status');
     const ips=st.allowed_ips||[];

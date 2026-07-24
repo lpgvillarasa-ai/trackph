@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, render_template, session, redirect
-import os, uuid, hashlib, secrets, time, json
+import os, uuid, hashlib, secrets, time, json, ipaddress
 import urllib.request, urllib.parse
 from datetime import datetime, timezone, timedelta
 
@@ -184,6 +184,33 @@ def allowed_ips():
     ips += [i.strip() for i in os.environ.get('ALLOWED_IPS', '').split(',') if i.strip()]
     return ips
 
+def ip_allowed(ip, entries):
+    """Match a client IP against allowlist entries.
+
+    Entries may be exact IPs or CIDR ranges (e.g. 203.0.113.0/24).
+    Bare IPv6 entries match their whole /64: devices on the same network
+    share the prefix but rotate the second half (privacy extensions).
+    """
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    for e in entries:
+        try:
+            if '/' in e:
+                if addr in ipaddress.ip_network(e, strict=False):
+                    return True
+                continue
+            entry = ipaddress.ip_address(e)
+            if addr == entry:
+                return True
+            if addr.version == 6 and entry.version == 6:
+                if ipaddress.ip_network(f'{entry}/64', strict=False) == ipaddress.ip_network(f'{addr}/64', strict=False):
+                    return True
+        except ValueError:
+            continue
+    return False
+
 # Google sign-in must stay reachable so the master admin can log in from anywhere
 IP_EXEMPT_PATHS = ('/api/ip-status', '/api/ip-unlock', '/auth/google/start', '/auth/google/callback')
 
@@ -215,7 +242,7 @@ def gate():
         return None
     if session.get('ip_bypass'):
         return None
-    if client_ip() in ips:
+    if ip_allowed(client_ip(), ips):
         return None
     if request.path.startswith('/api/'):
         return jsonify({'error': 'Access restricted: your network is not allowed'}), 403
@@ -227,7 +254,7 @@ def ip_status():
     return jsonify({
         'ip': client_ip(),
         'restricted': bool(ips),
-        'allowed': (not ips) or session.get('ip_bypass') is True or session.get('master') is True or client_ip() in ips,
+        'allowed': (not ips) or session.get('ip_bypass') is True or session.get('master') is True or ip_allowed(client_ip(), ips),
         'allowed_ips': ips if is_admin() else [],
     })
 
