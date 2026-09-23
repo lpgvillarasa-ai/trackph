@@ -1,3 +1,6 @@
+<!-- BEGIN:ai-collab-kit -->
+<!-- Managed by lpgvillarasa-ai/ai-collab-hub. Edit it there, not here. -->
+
 # CLAUDE.md
 
 @AGENTS.md
@@ -44,3 +47,5 @@ question with `@codex` instead of guessing. Never start work nobody asked for.
 - The build passes (and tests, if the project has them)
 - The PR description explains the change in plain language
 - Codex's review has been checked and P0/P1 items resolved (or noted as still pending)
+
+<!-- END:ai-collab-kit -->

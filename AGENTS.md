@@ -1,3 +1,6 @@
+<!-- BEGIN:ai-collab-kit -->
+<!-- Managed by lpgvillarasa-ai/ai-collab-hub. Edit it there, not here. -->
+
 # AGENTS.md - How AI agents work in this repo
 
 Shared rules for every AI agent here. Codex reads this file directly; Claude Code reads it
@@ -65,3 +68,5 @@ opinion, ask the other agent in a PR comment with one clear question instead of 
 mention it just to say thanks or "done". After **3 rounds** back and forth on the same issue,
 or **5 loop rounds** on one PR, stop and ask Lee to decide. If you disagree with the other
 agent, say so with your reason instead of silently reverting its work.
+
+<!-- END:ai-collab-kit -->
